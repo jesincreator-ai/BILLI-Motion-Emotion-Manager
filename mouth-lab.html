@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BILLI M6 Mouth & Emotion Lab</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#080c13;color:#eef6ff;font:15px system-ui;padding:18px}
+main{max-width:900px;margin:auto;display:grid;grid-template-columns:minmax(260px,1fr) minmax(260px,.7fr);gap:18px}
+.card{border:1px solid #26374c;border-radius:20px;background:linear-gradient(150deg,#152030,#0b111b);padding:18px}
+canvas{width:100%;aspect-ratio:1;background:#02050a;border-radius:15px;display:block}
+h1{font-size:clamp(22px,4vw,32px);margin:0 0 6px}p{color:#9fb1c6;margin:0 0 15px}.controls{display:grid;gap:16px}
+label{display:flex;justify-content:space-between;gap:12px;font-weight:600}select,button{width:100%;padding:11px;border-radius:11px;background:#172537;color:white;border:1px solid #354b62;font:inherit}
+button{cursor:pointer}.row{display:grid;grid-template-columns:1fr 1fr;gap:9px}.range{width:100%;accent-color:#5bd8ff}
+small{color:#91a6bd}.badge{padding:8px;border-radius:10px;background:#0b1420;border:1px solid #293a4d;color:#a9c6db}
+@media(max-width:700px){main{grid-template-columns:1fr}body{padding:12px}}
+</style>
+<main><section class="card"><h1>BILLI · Mouth & Emotion Lab</h1><p>Offline talking-mouth test. Volume drives jaw opening while emotion remains underneath.</p><canvas id="c" width="480" height="480"></canvas><div class="badge" id="state">Neutral · idle</div></section>
+<section class="card controls"><div><label for="mode">Face mode</label><select id="mode"><option value="calm">Calm / Standard</option><option value="rugged">Rugged</option></select></div>
+<div><label for="emotion">Emotion</label><select id="emotion"></select></div>
+<div><label for="level">Simulated speech volume <span id="v">0%</span></label><input id="level" class="range" type="range" min="0" max="100" value="0"></div>
+<div class="row"><button id="talk">Start talking simulation</button><button id="stop">Stop speech</button></div>
+<div><label><span>Auto voice rhythm</span><input id="auto" type="checkbox" checked></label></div>
+<small>When speech ends, the mouth returns to the selected emotion. This page uses no network, audio files or external assets.</small></section></main>
+<script>
+(()=>{const c=document.getElementById('c'),x=c.getContext('2d'),sel=document.getElementById('emotion'),mode=document.getElementById('mode'),level=document.getElementById('level'),talk=document.getElementById('talk'),auto=document.getElementById('auto'),v=document.getElementById('v'),state=document.getElementById('state');
+const expressions={neutral:{eye:.88,brow:0,mouth:'flat'},happy:{eye:.78,brow:.08,mouth:'smile'},sad:{eye:.62,brow:.15,mouth:'frown'},surprise:{eye:1,brow:-.02,mouth:'O'},disappointment:{eye:.55,brow:.18,mouth:'frown'},sorry:{eye:.6,brow:.2,mouth:'frown'},crying:{eye:.66,brow:.12,mouth:'frown'},angry:{eye:.58,brow:-.3,mouth:'tight'},ego_fire:{eye:.72,brow:-.35,mouth:'smirk'}};
+let active=false,amp=0,smoothed=0,emotion='neutral',t=0,last=performance.now();
+function opts(){const list=mode.value==='calm'?['neutral','happy','sad','surprise','disappointment','sorry','crying']:['neutral','angry','ego_fire'];sel.innerHTML=list.map(a=>'<option value="'+a+'">'+a.replace('_',' ')+'</option>').join('');emotion=sel.value||'neutral'}
+mode.onchange=opts;sel.onchange=()=>emotion=sel.value;talk.onclick=()=>{active=true;state.textContent='Speaking simulation · mouth amplitude controlled'};document.getElementById('stop').onclick=()=>{active=false;amp=0;smoothed=0;level.value=0;v.textContent='0%';state.textContent=emotion+' · idle/rest mouth'};level.oninput=()=>{amp=+level.value/100;v.textContent=level.value+'%'};opts();
+function draw(now){let dt=Math.min(.05,(now-last)/1000);last=now;t+=dt;const p=expressions[emotion]||expressions.neutral;if(active&&auto.checked){amp=.12+.62*Math.abs(Math.sin(t*5.1))*.75+.18*Math.abs(Math.sin(t*10.8));amp=Math.min(1,amp);level.value=Math.round(amp*100);v.textContent=level.value+'%'}smoothed+=(amp-smoothed)*Math.min(1,dt*12);const speaking=active&&smoothed>.12;
+x.clearRect(0,0,480,480);let rugged=mode.value==='rugged',glow=rugged?'#ff3446':'#55dfff',shell=rugged?'#5b1b24':'#31576a',eye=rugged?'#ff6755':'#a9f1ff';x.fillStyle='#03070d';x.fillRect(0,0,480,480);
+x.shadowColor=glow;x.shadowBlur=28;x.strokeStyle=glow;x.lineWidth=5;x.strokeRect(48,58,384,360);x.shadowBlur=0;
+for(const cx of [150,330]){x.fillStyle=shell;x.beginPath();x.roundRect(cx-72,140,144,105,35);x.fill();x.fillStyle=eye;x.beginPath();x.ellipse(cx,188,61,Math.max(8,70*p.eye),0,0,Math.PI*2);x.fill();x.fillStyle=rugged?'#210308':'#03121a';x.beginPath();x.ellipse(cx,190,24,36,0,0,Math.PI*2);x.fill();x.fillStyle='#fff';x.beginPath();x.arc(cx-15,172,9,0,Math.PI*2);x.fill();x.strokeStyle=glow;x.lineWidth=8;x.beginPath();if(p.brow<-.12){x.moveTo(cx-65,128);x.lineTo(cx+65,105);}else if(p.brow>.08){x.moveTo(cx-65,110);x.lineTo(cx+65,130)}else{x.moveTo(cx-65,112);x.lineTo(cx+65,112)}x.stroke()}
+let mouthOpen=speaking?smoothed:0; x.save();x.translate(240,345);x.shadowColor=glow;x.shadowBlur=15;x.strokeStyle=glow;x.fillStyle='#02070c';x.lineWidth=9;
+if(speaking){let h=8+54*mouthOpen,w=32+34*mouthOpen;x.beginPath();x.ellipse(0,0,w,h,0,0,Math.PI*2);x.fill();x.stroke();x.fillStyle=eye;x.globalAlpha=.65;x.beginPath();x.ellipse(0,h*.45,w*.45,h*.18,0,0,Math.PI*2);x.fill()}
+else if(p.mouth==='smile'){x.beginPath();x.moveTo(-55,-5);x.quadraticCurveTo(0,44,55,-5);x.stroke()}else if(p.mouth==='frown'){x.beginPath();x.moveTo(-55,20);x.quadraticCurveTo(0,-28,55,20);x.stroke()}else if(p.mouth==='O'){x.beginPath();x.ellipse(0,0,31,38,0,0,Math.PI*2);x.stroke()}else if(p.mouth==='smirk'){x.beginPath();x.moveTo(-48,3);x.quadraticCurveTo(0,18,54,-10);x.stroke()}else{x.beginPath();x.moveTo(-42,0);x.lineTo(42,0);x.stroke()}x.restore();state.textContent=active?(speaking?'Talking · amplitude '+Math.round(smoothed*100)+'%':'Speech active · below mouth threshold'):emotion+' · resting mouth';requestAnimationFrame(draw)}
+requestAnimationFrame(draw)})();
+</script>

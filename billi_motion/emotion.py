@@ -1,6 +1,23 @@
-"""Small deterministic emotion state engine; no model or network required."""
+"""Compact deterministic emotion state engine; no model or network required."""
 
-EMOTIONS = ("neutral", "happy", "sad", "angry", "curious", "surprised", "sleepy")
+EMOTIONS = (
+    "neutral",
+    "happy",
+    "sad",
+    "surprise",
+    "sleepy",
+    "disappointment",
+    "sorry",
+    "crying",
+    "angry",
+    "ego_fire",
+)
+EMOTION_ALIASES = {"surprised": "surprise"}
+
+
+def canonical_emotion(emotion):
+    """Return the canonical emotion name, preserving unknown values for validation."""
+    return EMOTION_ALIASES.get(emotion, emotion)
 
 
 def _clamp(value, low, high):
@@ -14,6 +31,7 @@ def _clamp(value, low, high):
 
 class EmotionEngine:
     def __init__(self, initial="neutral"):
+        initial = canonical_emotion(initial)
         if initial not in EMOTIONS:
             initial = "neutral"
         self._emotion = initial
@@ -21,6 +39,7 @@ class EmotionEngine:
         self._changed_at = 0
 
     def set_emotion(self, emotion, intensity=1.0, now_ms=0):
+        emotion = canonical_emotion(emotion)
         if emotion not in EMOTIONS:
             return False
         self._emotion = emotion

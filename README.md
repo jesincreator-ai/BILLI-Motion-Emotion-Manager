@@ -1,48 +1,87 @@
 # BILLI Motion & Emotion Manager (M6)
 
-Offline facial-expression, animation and display-theme manager for BILLI R-20. The manager core is MicroPython-friendly and desktop-testable.
+M6 is the offline face graphics and emotion subsystem for BILLI R-20. It provides one shared, MicroPython-friendly emotion/animation model, a direct-to-ST7789 renderer for the ESP32-WROOM-32, and a richer desktop/mobile browser preview.
 
-## Browser test / Vercel deployment
+## Visual engine
 
-The repository root contains a static `index.html` browser demo. Import this repository into Vercel and deploy it as a static site (Framework Preset: **Other**; leave Build Command and Output Directory empty). The demo lets you switch between standard white and rugged red face themes, select expressions, blink, and preview browser speech.
+The face renderer ports the six reference eye moods and two eye styles from ESP32 Robot Eyes: Flat (oval eye with a small pupil) and Glossy (rounded eye shell, recessed lens, pupil, two catchlights and curved upper/lower eyelid masks). Glossy is the default; choose Flat or Glossy through the browser controls, `manager.set_eye_style("flat"|"glossy")`, or `ESP32FaceDisplay.set_style("flat"|"glossy")`. The browser preview uses Canvas 2D curves and gradients. The WROOM renderer uses quantized RGB565 bands and direct ST7789 drawing operations, with no full-screen framebuffer.
 
-The browser demo is a simulation. It does not connect to an ESP32 or drive physical hardware.
+The ESP32-WROOM-32 does not have a programmable graphics GPU or PSRAM in this configuration. M6 therefore does **not** use full 3D meshes, PBR or GPU fragment shaders on the device. It draws a low-memory 2.5D approximation directly to the display and does not allocate a 240x240 RGB565 framebuffer (115,200 bytes). Browser effects are a higher-quality preview, not evidence of embedded frame rate.
 
-## Display target
+### Glossy eye reference
 
-The current hardware target is the **1.3-inch square 240x240 ST7789 SPI TFT**. The renderer uses RGB565 colours and a black background:
-- **standard mode:** white face graphics
-- **rugged mode:** red face graphics
+The eye treatment takes visual cues from [ESP32 Robot Eyes by Elroy Chen](https://github.com/ElroyChenWI/esp32-robot-eyes): layered glossy lens surfaces, recessed sockets, iris/pupil depth, bright catchlights and curved eyelid masks. BILLI's port is implemented for its own hardware rather than installing the reference firmware unchanged; see [the adaptation notes](docs/REFERENCE_GLOSSY_EYE_ADAPTATION.md).
 
-The display body/cardboard paint colour is independent of this setting. No external LED lighting is required.
+## Face profiles and emotion set
 
-The visible 1.3-inch square panel is approximately 33 mm on each side if the panel specification means 1.3-inch square active area; confirm the exact module PCB and active-area dimensions before cutting the bezel. The renderer canvas is 240x240 pixels.
+| Profile | Display palette | Supported expressions |
+|---|---|---|
+| Calm / Standard | Pearl white with cool blue-grey shadows | `neutral`, `happy`, `sad`, `angry`, `sleepy`, `surprise`, `disappointment`, `sorry`, `crying` |
+| Rugged | Crimson red with deep red shadows | `neutral`, `happy`, `sad`, `angry`, `sleepy`, `surprise`, `ego_fire` |
 
-## Modes
+The six reference moods are available in both profiles. BILLI's additional emotional overlays (`disappointment`, `sorry`, `crying`) remain Calm-only; `ego_fire` remains Rugged-only.
+
+`surprised` remains accepted as a compatibility alias for `surprise`. The manager rejects expressions that do not belong to the active profile. Switching profiles resets an incompatible active expression to `neutral`.
+
+## Browser preview
+
+Open `index.html` directly on a desktop or mobile browser; it has no CDN, remote font, build step or runtime network dependency. Controls include Calm/Rugged palettes, Flat/Glossy eye style, the six shared reference moods, BILLI-specific expressions, intensity, idle gaze, blink and reset. The page is a visual simulator; it does not connect to physical hardware.
+
+Vercel deployment remains static: import the repository, select Framework Preset **Other**, and leave Build Command and Output Directory empty. The repository's `vercel.json` serves the root `index.html`.
+
+## Python usage
 
 ```python
+from billi_motion.manager import MotionEmotionManager
+
 manager = MotionEmotionManager()
-manager.set_mode("standard", now_ms)  # white graphics
-manager.set_mode("rugged", now_ms)    # red graphics
-frame = manager.tick(now_ms)
-display.draw(frame)
+manager.set_mode("standard", now_ms=0)
+manager.set_emotion("happy", 0.85, now_ms=0)
+
+frame = manager.tick(20)
+# Send frame to the M6 display adapter from the cooperative loop.
 ```
 
-M1 should send the same mode to M6 and Voice Lite. M6 owns face graphics only; it must not command servos. M8 remains the safety authority.
-
-## Features
-
-- Seven deterministic expressions: neutral, happy, sad, angry, curious, surprised and sleepy.
-- Timed blinking, bounded pupil movement and speech mouth synchronization.
-- Fixed-capacity event queue.
-- Cooperative rendering loop; do not block it with audio, storage or network operations.
-- Display driver is supplied by the hardware project; no runtime download.
+The public mode names remain `standard` and `rugged`; `calm` is an alias for `standard`. Use a monotonic millisecond clock shared with the rest of the robot. M6's `tick()` is designed to be called repeatedly from a cooperative loop; do not block it with audio, storage or network operations.
 
 ## ESP32 setup
 
-The MicroPython entry point is stored at `firmware/main.py` so Vercel does not mistake it for a Python web-function entry point. When flashing the robot, copy it to the ESP32 as `main.py` together with the `billi_motion/` package and hardware driver files.
+The MicroPython entry point is `firmware/main.py`. Copy it to the ESP32 as `main.py`, together with the `billi_motion/` package and `hardware/` adapter, plus the ST7789 driver used by the hardware project.
 
-Initialize a MicroPython ST7789 driver for 240x240 RGB565 and pass the display object to `ESP32FaceDisplay(display, 240, 240)`. The driver must expose `fill`, `rect`, `fill_rect`, `line`, and `show`. Confirm the driver colour order and rotation on the actual module.
+Initialize the actual 240x240 ST7789 SPI display in RGB565 mode and pass its driver object to:
+
+```python
+from hardware.esp32_display import ESP32FaceDisplay
+
+face_display = ESP32FaceDisplay(display, 240, 240)
+manager.set_eye_style("glossy")  # "flat" is also supported
+face_display.draw(manager.tick(now_ms))
+
+# Or control style directly on the hardware adapter:
+# face_display.set_style("flat")
+```
+
+The driver must expose `fill`, `rect`, `fill_rect`, `line` and `show`. Confirm colour order, rotation, SPI frequency and the concrete driver's argument semantics on the actual module. Do not add a framebuffer or use a driver that silently allocates a full-screen image.
+
+**Hardware status:** host tests and static checks verify the renderer's driver-call contract, RGB565 bounds, display clipping and a bounded number of drawing transactions. They do not prove the actual WROOM-32 frame rate, free heap or screen appearance. Those must be measured on the robot before publishing a performance claim; approximately 15 fps remains an initial engineering objective, not a guarantee.
+
+## Verification
+
+Run the repository checks with:
+
+```bash
+python -m unittest discover -s tests -v
+python scripts/check_preview.py
+```
+
+GitHub Actions runs the Python suite on Python 3.10, 3.11 and 3.12 and validates the inline browser JavaScript with Node.js. The firmware modules use MicroPython-compatible standard-library features only.
+
+## System ownership
+
+- **M6:** face geometry, expression state and display rendering only.
+- **M5:** voice and TTS; M6 only receives normalized speech level samples for mouth synchronization.
+- **M7:** sole servo and robot-motion owner.
+- **M8:** safety/guardian veto authority. M6 must not bypass it.
 
 ## License
 
