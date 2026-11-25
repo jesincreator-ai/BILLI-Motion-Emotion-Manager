@@ -129,7 +129,7 @@ class FaceRenderer:
         self._line(cx - rx - 2, lid_y + int(eye_tilt * 7), cx + rx + 2,
                    lid_y - int(eye_tilt * 7), shell)
 
-    def _draw_mouth(self, cx, cy, mode, mouth, glow):
+    def _draw_mouth(self, cx, cy, mode, mouth, glow, mouth_open=0.0):
         rugged = mode == "rugged"
         color = rgb565(255, 58, 66) if rugged else rgb565(180, 235, 247)
         dark = rgb565(30, 4, 8) if rugged else rgb565(8, 22, 30)
@@ -215,7 +215,7 @@ class FaceRenderer:
         self._line(right_cx - rx, eye_cy - ry - 5 - int(brow_tilt * 8), right_cx + rx,
                    eye_cy - ry - 5, rgb565(230, 244, 255) if mode == "standard" else rgb565(255, 80, 80))
         mouth = frame.get("mouth", "frown" if expression in ("sad", "crying", "sorry", "disappointment") else "closed")
-        self._draw_mouth(self.width // 2, mouth_cy, mode, mouth, glow)
+        mouth_open = max(0.0, min(1.0, float(frame.get("mouth_open", 0.0))))\n        self._draw_mouth(self.width // 2, mouth_cy, mode, mouth, glow, mouth_open)
         d.show()
 
         elapsed = diff_ms(self._clock_ms(), started_at)
