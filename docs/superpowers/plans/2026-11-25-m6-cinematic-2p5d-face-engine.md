@@ -1,6 +1,6 @@
 # M6 Cinematic 2.5D Face Engine Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Replace M6's primitive facial renderer with a cinematic, offline 2.5D face engine that is expressive on the ESP32-WROOM-32 and visually richer in a desktop/mobile browser preview.
 
@@ -40,12 +40,12 @@
 - Consumes: current `EmotionEngine`, `MotionEmotionManager.set_mode()`, `set_emotion()`.
 - Produces: canonical emotion names, mode-aware validation, neutral fallback on mode changes.
 
-- [ ] Add tests for all eight named emotions and the neutral idle pose.
-- [ ] Test that each Calm expression is rejected in rugged mode and rugged expressions are rejected in standard mode.
-- [ ] Test `surprised` as a compatibility alias for canonical `surprise`.
-- [ ] Test that unknown inputs leave the existing state unchanged.
-- [ ] Run `python -m unittest discover -s tests -v`; expected: new contract tests fail for the missing mode enforcement/canonicalization.
-- [ ] Commit the failing contract tests.
+- [x] Add tests for all eight named emotions and the neutral idle pose.
+- [x] Test that each Calm expression is rejected in rugged mode and rugged expressions are rejected in standard mode.
+- [x] Test `surprised` as a compatibility alias for canonical `surprise`.
+- [x] Test that unknown inputs leave the existing state unchanged.
+- [x] Run `python -m unittest discover -s tests -v`; expected: new contract tests fail for the missing mode enforcement/canonicalization.
+- [x] Commit the failing contract tests.
 
 ### Task 2: Implement bounded animation and the embedded renderer
 
@@ -61,13 +61,13 @@
 - Produces: bounded frame fields `eye_open`, `eye_tilt`, `brow_tilt`, `transition`, `blink`, `glow`, `tear`, `fire`, `gaze_x`, `gaze_y`, `mouth`.
 - Produces: a display renderer using only the existing five display operations and no full-screen framebuffer.
 
-- [ ] Add renderer fake-display tests before production changes: supported API only, clipped writes, RGB565 bounds and no framebuffer allocation.
-- [ ] Run the focused renderer tests; expected: fail because the current renderer ignores the new face geometry/effect fields.
-- [ ] Implement emotion constants and alias normalization; enforce mode-specific emotion validation in the manager.
-- [ ] Implement eased expression interpolation, timed blinks and bounded idle/effect phases without blocking loops.
-- [ ] Implement layered RGB565 eye shells, stepped radial glow, highlights, brows, mouth, tears and ember-style rugged accents using clipped spans/primitives.
-- [ ] Run focused and full Python unittest suites; expected: all existing and new tests pass.
-- [ ] Commit the embedded engine and tests.
+- [x] Add renderer fake-display tests before production changes: supported API only, clipped writes, RGB565 bounds and no framebuffer allocation.
+- [x] Run the focused renderer tests; expected: fail because the current renderer ignores the new face geometry/effect fields.
+- [x] Implement emotion constants and alias normalization; enforce mode-specific emotion validation in the manager.
+- [x] Implement eased expression interpolation, timed blinks and bounded idle/effect phases without blocking loops.
+- [x] Implement layered RGB565 eye shells, stepped radial glow, highlights, brows, mouth, tears and ember-style rugged accents using clipped spans/primitives.
+- [x] Run focused and full Python unittest suites; expected: all existing and new tests pass.
+- [x] Commit the embedded engine and tests.
 
 ### Task 3: Replace the browser preview with an offline cinematic Canvas renderer
 
@@ -81,12 +81,12 @@
 - UI: Calm/Standard and Rugged modes, mode-filtered emotions, intensity, auto-idle, blink, and reset controls.
 - Renderer: Canvas 2D layered eye geometry, gradient depth, highlights/reflections, bloom, tear droplets, ember accents and eased transitions.
 
-- [ ] Add static preview-contract tests first: Canvas presence, all eight emotion IDs, local-only assets, responsive layout and required controls.
-- [ ] Run preview-contract tests; expected: fail because the current page contains only a small SVG face and no mode-filtered emotion controls.
-- [ ] Implement the browser Canvas renderer and controls with vanilla JavaScript only.
-- [ ] Add a preview checker that extracts inline JavaScript and validates it with Node `--check`.
-- [ ] Run Python preview tests and Node syntax validation; expected: no external network references and valid inline JavaScript.
-- [ ] Commit the browser preview and checks.
+- [x] Add static preview-contract tests first: Canvas presence, all eight emotion IDs, local-only assets, responsive layout and required controls.
+- [x] Run preview-contract tests; expected: fail because the current page contains only a small SVG face and no mode-filtered emotion controls.
+- [x] Implement the browser Canvas renderer and controls with vanilla JavaScript only.
+- [x] Add a preview checker that extracts inline JavaScript and validates it with Node `--check`.
+- [x] Run Python preview tests and Node syntax validation; expected: no external network references and valid inline JavaScript.
+- [x] Commit the browser preview and checks.
 
 ### Task 4: Wire continuous verification and update deployment/integration docs
 
@@ -96,22 +96,22 @@
 - Modify: `docs/INTEGRATION_CONTRACT.md`
 - Modify: `config.py` only if the public constants need updating.
 
-- [ ] Add Node syntax validation to the existing CI workflow without adding runtime dependencies.
-- [ ] Document local preview, emotion/mode matrix, firmware copying, memory boundaries and the hardware-only verification boundary.
-- [ ] Confirm Vercel remains a static HTML deployment with no build tool or remote assets.
-- [ ] Run all Python tests plus the preview checker on the remote GitHub Actions workflow; expected: all Python matrix jobs and browser syntax checks succeed.
-- [ ] Commit CI and documentation changes.
+- [x] Add Node syntax validation to the existing CI workflow without adding runtime dependencies.
+- [x] Document local preview, emotion/mode matrix, firmware copying, memory boundaries and the hardware-only verification boundary.
+- [x] Confirm Vercel remains a static HTML deployment with no build tool or remote assets.
+- [x] Run all Python tests plus the preview checker on the remote GitHub Actions workflow; expected: all Python matrix jobs and browser syntax checks succeed.
+- [x] Commit CI and documentation changes.
 
 ### Task 5: Final review and handoff
 
 **Files:**
 - Review all changed files on this branch.
 
-- [ ] Compare each acceptance criterion in the spec against code and test evidence.
-- [ ] Review for display API drift, allocations in hot loops, out-of-bounds drawing, stale browser controls and M6/M7/M8 ownership violations.
-- [ ] Inspect the final GitHub Actions run logs and repository diff.
-- [ ] Open a draft pull request against `main`; do not merge automatically.
-- [ ] Report desktop/mobile test evidence separately from unperformed physical ESP32 measurements.
+- [x] Compare each acceptance criterion in the spec against code and test evidence.
+- [x] Review for display API drift, allocations in hot loops, out-of-bounds drawing, stale browser controls and M6/M7/M8 ownership violations.
+- [x] Inspect the final GitHub Actions run logs and repository diff.
+- [x] Open a draft pull request against `main`; do not merge automatically.
+- [x] Report desktop/mobile test evidence separately from unperformed physical ESP32 measurements.
 
 ---
 
@@ -123,3 +123,11 @@ python scripts/check_preview.py
 ```
 
 The actual device acceptance run remains a required owner-side check: flash the MicroPython package to the WROOM-32, connect the existing ST7789 module, exercise all valid expressions in both modes, and record actual frame rate and free heap. Do not infer this from host CI.
+
+
+## Execution notes
+
+- The TDD red/green cycle was recorded in GitHub Actions. Contract, renderer-transaction and localization tests each failed before the corresponding implementation/fix and passed after it.
+- The final checked CI run validates Python 3.10, 3.11 and 3.12 and parses the single-file browser preview with Node.js 22.
+- The local browser interaction/visual inspection and hosted Vercel preview were not run in this environment.
+- The actual WROOM-32/ST7789 device check remains an owner-side acceptance step: flash the feature branch and measure FPS, free heap, SPI colour order and display rotation.
