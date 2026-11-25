@@ -4,7 +4,7 @@ M6 is the offline face graphics and emotion subsystem for BILLI R-20. It provide
 
 ## Visual engine
 
-The face uses a stylized **2.5D** treatment: layered eye shells, recessed sockets, iris/pupil details, highlights, shadows, stepped light falloff, color grading and emotion-specific secondary effects. The browser preview uses Canvas 2D gradients and compositing. The ESP32 renderer uses quantized RGB565 bands and the existing ST7789 driver operations. It measures each completed draw and adapts among three glow-detail tiers for the next frame.
+The face renderer ports the six reference eye moods and two eye styles from ESP32 Robot Eyes: Flat (oval eye with a small pupil) and Glossy (rounded eye shell, recessed lens, pupil, two catchlights and curved upper/lower eyelid masks). Glossy is the default; choose Flat or Glossy through the browser controls, `manager.set_eye_style("flat"|"glossy")`, or `ESP32FaceDisplay.set_style("flat"|"glossy")`. The browser preview uses Canvas 2D curves and gradients. The WROOM renderer uses quantized RGB565 bands and direct ST7789 drawing operations, with no full-screen framebuffer.
 
 The ESP32-WROOM-32 does not have a programmable graphics GPU or PSRAM in this configuration. M6 therefore does **not** use full 3D meshes, PBR or GPU fragment shaders on the device. It draws a low-memory 2.5D approximation directly to the display and does not allocate a 240x240 RGB565 framebuffer (115,200 bytes). Browser effects are a higher-quality preview, not evidence of embedded frame rate.
 
@@ -16,15 +16,16 @@ The eye treatment takes visual cues from [ESP32 Robot Eyes by Elroy Chen](https:
 
 | Profile | Display palette | Supported expressions |
 |---|---|---|
-| Calm / Standard | White, pearl and cool cyan shadow accents | `happy`, `sad`, `surprise`, `disappointment`, `sorry`, `crying` |
-| Rugged | Deep red, ember and dark graphite | `angry`, `ego_fire` |
-| Shared idle/fallback | Dim neutral lighting | `neutral` |
+| Calm / Standard | Pearl white with cool blue-grey shadows | `neutral`, `happy`, `sad`, `angry`, `sleepy`, `surprise`, `disappointment`, `sorry`, `crying` |
+| Rugged | Crimson red with deep red shadows | `neutral`, `happy`, `sad`, `angry`, `sleepy`, `surprise`, `ego_fire` |
+
+The six reference moods are available in both profiles. BILLI's additional emotional overlays (`disappointment`, `sorry`, `crying`) remain Calm-only; `ego_fire` remains Rugged-only.
 
 `surprised` remains accepted as a compatibility alias for `surprise`. The manager rejects expressions that do not belong to the active profile. Switching profiles resets an incompatible active expression to `neutral`.
 
 ## Browser preview
 
-Open `index.html` directly on a desktop or mobile browser; it has no CDN, remote font, build step or runtime network dependency. Controls include profile selection, mode-specific emotion selection, expression intensity, idle breathing/gaze, blink and reset. The page is a visual simulator; it does not connect to physical hardware.
+Open `index.html` directly on a desktop or mobile browser; it has no CDN, remote font, build step or runtime network dependency. Controls include Calm/Rugged palettes, Flat/Glossy eye style, the six shared reference moods, BILLI-specific expressions, intensity, idle gaze, blink and reset. The page is a visual simulator; it does not connect to physical hardware.
 
 Vercel deployment remains static: import the repository, select Framework Preset **Other**, and leave Build Command and Output Directory empty. The repository's `vercel.json` serves the root `index.html`.
 
@@ -53,7 +54,11 @@ Initialize the actual 240x240 ST7789 SPI display in RGB565 mode and pass its dri
 from hardware.esp32_display import ESP32FaceDisplay
 
 face_display = ESP32FaceDisplay(display, 240, 240)
+manager.set_eye_style("glossy")  # "flat" is also supported
 face_display.draw(manager.tick(now_ms))
+
+# Or control style directly on the hardware adapter:
+# face_display.set_style("flat")
 ```
 
 The driver must expose `fill`, `rect`, `fill_rect`, `line` and `show`. Confirm colour order, rotation, SPI frequency and the concrete driver's argument semantics on the actual module. Do not add a framebuffer or use a driver that silently allocates a full-screen image.
