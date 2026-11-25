@@ -34,8 +34,8 @@ class BrowserPreviewContractTests(unittest.TestCase):
     def test_preview_uses_canvas_and_required_controls(self):
         self.assertTrue(any(tag == "canvas" and attrs.get("id") == "face"
                             for tag, attrs in self.parser.elements))
-        required = {"standard", "rugged", "emotion", "intensity",
-                    "autoIdle", "blink", "reset"}
+        required = {"standard", "rugged", "flatStyle", "glossyStyle",
+                    "emotion", "intensity", "autoIdle", "blink", "reset"}
         self.assertTrue(required.issubset(self.parser.ids))
 
     def test_all_eight_emotions_are_present(self):
@@ -51,8 +51,9 @@ class BrowserPreviewContractTests(unittest.TestCase):
                 self.assertIn(feature, self.html)
 
     def test_speaking_state_is_available_in_both_modes(self):
-        self.assertIn('standard: ["neutral"', self.html)
-        self.assertIn('rugged: ["neutral"', self.html)
+        self.assertIn('"speaking"', self.html)
+        self.assertIn('standard: ["neutral", "happy", "sad", "angry", "sleepy", "surprise", "speaking"', self.html)
+        self.assertIn('rugged: ["neutral", "happy", "sad", "angry", "sleepy", "surprise", "speaking"', self.html)
         self.assertIn('speaking: {', self.html)
         self.assertIn('mouth:"talk"', self.html)
 
@@ -72,8 +73,8 @@ class BrowserPreviewContractTests(unittest.TestCase):
 
     def test_glossy_palettes_are_pearl_white_for_calm_and_crimson_for_rugged(self):
         self.assertIn('eyeTop:"#ffffff"', self.html)
-        self.assertIn('eyeMid:"#eef3f7"', self.html)
-        self.assertIn('eyeLow:"#96aab6"', self.html)
+        self.assertIn('eyeMid:"#f7fbff"', self.html)
+        self.assertIn('eyeLow:"#a9bdc8"', self.html)
         self.assertIn('eyeMid:"#e32335"', self.html)
         self.assertIn('eyeLow:"#5d0610"', self.html)
         self.assertIn('glow:"#ff283d"', self.html)
