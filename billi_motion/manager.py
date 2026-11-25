@@ -68,7 +68,12 @@ class MotionEmotionManager:
     def tick(self, now_ms):
         frame = self.animator.tick(now_ms)
         if self.speech.active:
-            frame["mouth"] = self.speech.mouth
+            frame["mouth"] = "talk" if self.speech.mouth == "open" else "closed"
+            frame["mouth_open"] = self.speech.smoothed_level if self.speech.mouth == "open" else 0.0
+            frame["speech_active"] = True
+        else:
+            frame["mouth_open"] = 0.0
+            frame["speech_active"] = False
         frame["emotion"] = self.emotion.get_state()["emotion"]
         frame["mode"] = self.mode
         frame["color"] = "red" if self.mode == "rugged" else "white"
