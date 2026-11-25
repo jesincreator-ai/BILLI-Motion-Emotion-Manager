@@ -82,27 +82,30 @@ class FaceRenderer:
             self._fill_rect(int(cx) + shift - half, int(cy) + top,
                             (half * 2) + 1, bottom - top + 1, color)
 
-    def _draw_eye(self, cx, cy, rx, ry, mode, gaze_x, gaze_y, eye_tilt, glow, eye_open):
+    def _draw_eye(self, cx, cy, rx, ry, mode, gaze_x, gaze_y, eye_tilt, glow, eye_open, expression):
         rugged = mode == "rugged"
         if rugged:
-            halo_outer = rgb565(72, 0, 3)
-            halo_mid = rgb565(128, 0, 8)
-            halo_inner = rgb565(210, 8, 18)
-            shell = rgb565(74, 11, 20)
-            socket = rgb565(9, 2, 5)
-            lens = rgb565(240, 34, 42)
-            lens_low = rgb565(118, 3, 12)
-            iris = rgb565(255, 80, 48)
-            highlight = rgb565(255, 198, 161)
+            # Saturated crimson surface, deep red socket and warm reflected light.
+            halo_outer = rgb565(66, 0, 7)
+            halo_mid = rgb565(132, 2, 14)
+            halo_inner = rgb565(218, 12, 26)
+            shell = rgb565(112, 13, 27)
+            socket = rgb565(18, 3, 8)
+            lens = rgb565(255, 56, 66)
+            lens_low = rgb565(126, 7, 20)
+            iris = rgb565(255, 96, 82)
+            highlight = WHITE
         else:
-            halo_outer = rgb565(7, 32, 50)
-            halo_mid = rgb565(14, 78, 105)
-            halo_inner = rgb565(38, 145, 174)
-            shell = rgb565(66, 112, 133)
-            socket = rgb565(5, 14, 22)
-            lens = rgb565(205, 237, 248)
-            lens_low = rgb565(94, 161, 182)
-            iris = rgb565(86, 218, 245)
+            # Calm is a pearly white lens with cool graphite-blue shading,
+            # not a cyan-filled flat eye.
+            halo_outer = rgb565(10, 24, 34)
+            halo_mid = rgb565(28, 57, 72)
+            halo_inner = rgb565(72, 111, 130)
+            shell = rgb565(112, 139, 153)
+            socket = rgb565(7, 17, 25)
+            lens = rgb565(242, 246, 250)
+            lens_low = rgb565(150, 177, 191)
+            iris = rgb565(110, 176, 198)
             highlight = WHITE
 
         strength = max(0.0, min(1.0, float(glow)))
@@ -121,13 +124,50 @@ class FaceRenderer:
         py = int(cy + (float(gaze_y) * 6))
         self._lens(px, py, max(4, rx // 3), max(5, ry // 2), iris)
         self._lens(px, py + 1, max(2, rx // 7), max(3, ry // 4), socket)
-        self._lens(px - max(2, rx // 9), py - max(3, ry // 5), 3, 3, highlight)
+        # Two compact specular reflections recreate the glossy lens catchlights
+        # without introducing a sprite, canvas or temporary framebuffer.
+        self._lens(px - max(2, rx // 8), py - max(3, ry // 5),
+                   max(3, rx // 10), max(4, ry // 8), highlight)
+        self._lens(px + max(3, rx // 6), py + max(3, ry // 6),
+                   2, 3, highlight)
         self._line(cx - rx + 2, cy - (ry // 3), cx, cy - ry + 3, highlight)
         self._line(cx, cy - ry + 3, cx + rx - 2, cy - (ry // 3), highlight)
+        self._draw_lids(cx, cy, rx, ry, eye_open, eye_tilt, expression)
 
-        lid_y = cy - int((ry * (0.62 - (eye_open * 0.1))))
-        self._line(cx - rx - 2, lid_y + int(eye_tilt * 7), cx + rx + 2,
-                   lid_y - int(eye_tilt * 7), shell)
+    def _draw_lids(self, cx, cy, rx, ry, eye_open, eye_tilt, expression):
+        """Mask each eye's upper contour with a curved, quantized lid edge.
+
+        This follows the reference's column-wise lid carving, using a small
+        bounded number of spans instead of a full off-screen canvas.
+        """
+        if self.quality_tier <= 0:
+            segments = 5
+        elif self.quality_tier == 1:
+            segments = 7
+        else:
+            segments = 9
+
+        aperture = max(0.05, min(1.0, float(eye_open)))
+        closure = int((1.0 - aperture) * ry * 1.25)
+        top_edge = cy - ry - 2
+        for band in range(segments):
+            x0 = cx - rx + ((2 * rx * band) // segments)
+            x1 = cx - rx + ((2 * rx * (band + 1)) // segments)
+            if x1 <= x0:
+                continue
+            mid_x = (x0 + x1) // 2
+            u = (mid_x - cx) / float(max(1, rx))
+            arch = int(ry * (1.0 - sqrt(max(0.0, 1.0 - (u * u)))))
+            slope = int(float(eye_tilt) * u * ry * 0.38)
+            lid_y = cy - ry + arch + closure + slope
+            self._fill_rect(x0, top_edge, x1 - x0, max(0, lid_y - top_edge), BLACK)
+
+            # Happy eyes close gently from below, leaving a crescent-shaped lens.
+            if expression == "happy":
+                lower_arch = int(ry * sqrt(max(0.0, 1.0 - (u * u))))
+                smile_lid = cy + lower_arch - int((1.0 - (u * u)) * ry * 0.24)
+                self._fill_rect(x0, smile_lid, x1 - x0,
+                                max(0, cy + ry + 2 - smile_lid), BLACK)
 
     def _draw_mouth(self, cx, cy, mode, mouth, glow, mouth_open=0.0):
         rugged = mode == "rugged"
@@ -216,8 +256,8 @@ class FaceRenderer:
         right_cx = int(self.width * 0.67)
         eye_cy = int(self.height * 0.39)
         mouth_cy = int(self.height * 0.76)
-        self._draw_eye(left_cx, eye_cy, rx, ry, mode, gaze_x, gaze_y, eye_tilt, glow, eye_open)
-        self._draw_eye(right_cx, eye_cy, rx, ry, mode, gaze_x, gaze_y, -eye_tilt, glow, eye_open)
+        self._draw_eye(left_cx, eye_cy, rx, ry, mode, gaze_x, gaze_y, eye_tilt, glow, eye_open, expression)
+        self._draw_eye(right_cx, eye_cy, rx, ry, mode, gaze_x, gaze_y, -eye_tilt, glow, eye_open, expression)
         if tear > 0:
             self._draw_tears(left_cx, eye_cy, rx, ry, tear, mode)
         if fire > 0:
