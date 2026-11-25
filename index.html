@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#090b10">
+<title>BILLI R-20 · M6 Face Test</title>
+<style>
+:root{color-scheme:dark;--accent:#f5f7fa}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 0,#1b2230,#090b10 58%);color:#f4f6fa;font:16px system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh;display:grid;place-items:center;padding:24px}.app{width:min(100%,760px)}header{text-align:center;margin-bottom:22px}h1{font-size:clamp(25px,5vw,38px);margin:0 0 7px}p{color:#aab3c2;margin:0}.panel{background:#121722;border:1px solid #2b3444;border-radius:24px;padding:clamp(16px,4vw,28px);box-shadow:0 24px 80px #0008}.screen-wrap{display:grid;place-items:center;margin:4px auto 22px}.screen{width:min(74vw,340px);aspect-ratio:1;background:#000;border:8px solid #303846;border-radius:22px;display:grid;place-items:center;overflow:hidden;color:#fff}.screen svg{width:100%;height:100%;display:block}.controls{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}.controls button,.controls select,input{font:inherit;border-radius:12px;border:1px solid #3b4658;background:#202938;color:#fff;padding:11px 15px}.controls button{cursor:pointer}.controls button[aria-pressed=true]{background:#e9edf5;color:#10141b;border-color:#e9edf5}.controls button:focus-visible,select:focus-visible{outline:3px solid #8ab4ff;outline-offset:2px}.status{text-align:center;margin-top:16px;color:#aab3c2;font-size:14px}.small{text-align:center;margin-top:18px;font-size:13px;color:#778397}.rugged .screen{color:#ff3030}.rugged .screen svg{filter:none}
+</style>
+</head>
+<body>
+<main class="app">
+<header><h1>BILLI R-20 · M6 Face Test</h1><p>Browser preview for the two display themes and expression states</p></header>
+<section class="panel" id="panel">
+<div class="screen-wrap"><div class="screen" role="img" aria-label="Animated BILLI robot face preview">
+<svg viewBox="0 0 240 240" aria-hidden="true">
+<g id="face" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+<path id="leftEye" d="M55 92 Q75 62 95 92"/>
+<path id="rightEye" d="M145 92 Q165 62 185 92"/>
+<path id="mouth" d="M86 157 Q120 181 154 157"/>
+</g>
+</svg></div></div>
+<div class="controls" role="group" aria-label="Display mode">
+<button id="standard" aria-pressed="true">Standard · White</button>
+<button id="rugged" aria-pressed="false">Rugged · Red</button>
+</div>
+<div class="controls" style="margin-top:12px">
+<select id="emotion" aria-label="Expression">
+<option value="neutral">Neutral</option><option value="happy">Happy</option><option value="sad">Sad</option><option value="angry">Angry</option><option value="curious">Curious</option><option value="surprised">Surprised</option><option value="sleepy">Sleepy</option>
+</select>
+<button id="blink">Blink</button>
+<button id="speak">Test voice</button>
+</div>
+<div class="status" id="status" aria-live="polite">Standard mode · Neutral expression</div>
+<div class="small">This is a browser simulation. Physical ST7789 display and ESP32 hardware require firmware testing.</div>
+</section>
+</main>
+<script>
+const panel=document.getElementById('panel'),left=document.getElementById('leftEye'),right=document.getElementById('rightEye'),mouth=document.getElementById('mouth'),emotion=document.getElementById('emotion'),status=document.getElementById('status');
+let mode='standard';
+const faces={
+neutral:['M55 92 Q75 62 95 92','M145 92 Q165 62 185 92','M86 157 Q120 181 154 157'],
+happy:['M55 92 Q75 62 95 92','M145 92 Q165 62 185 92','M78 145 Q120 198 162 145'],
+sad:['M55 105 Q75 125 95 105','M145 105 Q165 125 185 105','M82 175 Q120 135 158 175'],
+angry:['M53 83 L96 101','M144 101 L187 83','M85 165 Q120 145 155 165'],
+curious:['M55 92 Q75 62 95 92','M145 82 Q165 52 185 82','M92 164 Q120 172 148 164'],
+surprised:['M75 70 Q75 70 75 70','M165 70 Q165 70 165 70','M105 158 Q120 180 135 158'],
+sleepy:['M55 96 Q75 105 95 96','M145 96 Q165 105 185 96','M90 164 Q120 170 150 164']
+};
+function draw(){const f=faces[emotion.value];left.setAttribute('d',f[0]);right.setAttribute('d',f[1]);mouth.setAttribute('d',f[2]);status.textContent=(mode==='standard'?'Standard mode · White':'Rugged mode · Red')+' · '+emotion.value[0].toUpperCase()+emotion.value.slice(1)+' expression'}
+function setMode(next){mode=next;panel.classList.toggle('rugged',mode==='rugged');document.getElementById('standard').setAttribute('aria-pressed',String(mode==='standard'));document.getElementById('rugged').setAttribute('aria-pressed',String(mode==='rugged'));draw()}
+document.getElementById('standard').addEventListener('click',()=>setMode('standard'));document.getElementById('rugged').addEventListener('click',()=>setMode('rugged'));emotion.addEventListener('change',draw);
+document.getElementById('blink').addEventListener('click',()=>{const a=left.getAttribute('d'),b=right.getAttribute('d');left.setAttribute('d','M55 92 L95 92');right.setAttribute('d','M145 92 L185 92');setTimeout(()=>{left.setAttribute('d',a);right.setAttribute('d',b)},180)});
+document.getElementById('speak').addEventListener('click',()=>{if(!('speechSynthesis'in window)){status.textContent='Speech synthesis is not supported in this browser';return}speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(mode==='standard'?'Hello! I am BILLI, standard mode.':'BILLI rugged mode activated.');u.rate=mode==='standard'?1:.88;u.pitch=mode==='standard'?1.08:.78;speechSynthesis.speak(u);status.textContent='Playing '+mode+' voice preview'});
+draw();
+</script>
+</body></html>
