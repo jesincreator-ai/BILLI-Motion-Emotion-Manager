@@ -66,6 +66,15 @@ class EmotionContractTests(unittest.TestCase):
         self.assertEqual(manager.tick(11)["mode"], "standard")
 
 
+class EmotionLocaleTests(unittest.TestCase):
+    def test_all_named_emotions_have_english_tamil_and_sinhala_labels(self):
+        from billi_motion.locales import phrase
+        for emotion in STANDARD + RUGGED + ("neutral",):
+            for language in ("en", "ta", "si"):
+                with self.subTest(emotion=emotion, language=language):
+                    self.assertNotEqual(phrase(emotion, language), emotion)
+
+
 class CinematicAnimationTests(unittest.TestCase):
     def test_expression_transition_is_bounded_and_completes(self):
         animator = FaceAnimator(transition_duration_ms=300)
