@@ -6,8 +6,9 @@ from billi_motion.manager import MotionEmotionManager
 from billi_motion.renderer import FaceRenderer, rgb565
 
 
-STANDARD = ("happy", "sad", "surprise", "disappointment", "sorry", "crying")
-RUGGED = ("angry", "ego_fire")
+REFERENCE_MOODS = ("happy", "sad", "angry", "sleepy", "surprise")
+STANDARD = REFERENCE_MOODS + ("disappointment", "sorry", "crying")
+RUGGED = REFERENCE_MOODS + ("ego_fire",)
 
 
 class EmotionContractTests(unittest.TestCase):
@@ -15,15 +16,14 @@ class EmotionContractTests(unittest.TestCase):
         self.assertEqual(
             set(EMOTIONS),
             {"neutral", "happy", "sad", "surprise", "disappointment",
-             "sorry", "crying", "angry", "ego_fire"},
+             "sorry", "crying", "angry", "sleepy", "ego_fire"},
         )
 
     def test_standard_accepts_only_standard_emotions_and_neutral(self):
         manager = MotionEmotionManager()
         for emotion in STANDARD:
             self.assertTrue(manager.set_emotion(emotion, 0.8, 10), emotion)
-        for emotion in RUGGED:
-            self.assertFalse(manager.set_emotion(emotion, 0.8, 20), emotion)
+        self.assertFalse(manager.set_emotion("ego_fire", 0.8, 20))
         self.assertTrue(manager.set_emotion("neutral", 0.5, 30))
 
     def test_rugged_accepts_only_rugged_emotions_and_neutral(self):
@@ -31,8 +31,6 @@ class EmotionContractTests(unittest.TestCase):
         self.assertTrue(manager.set_mode("rugged", 10))
         for emotion in RUGGED:
             self.assertTrue(manager.set_emotion(emotion, 0.8, 20), emotion)
-        for emotion in STANDARD:
-            self.assertFalse(manager.set_emotion(emotion, 0.8, 30), emotion)
         self.assertTrue(manager.set_emotion("neutral", 0.5, 40))
 
     def test_surprised_compatibility_alias_is_canonicalized(self):
@@ -252,6 +250,73 @@ class GlossyEyeReferenceTests(unittest.TestCase):
         box_outlines = [call for call in display.calls if call[0] == "rect"]
         self.assertGreaterEqual(len(black_lid_bands), 8)
         self.assertEqual(box_outlines, [])
+
+
+
+class ReferenceRobotEyesPoseTests(unittest.TestCase):
+    def test_six_reference_moods_have_distinct_lid_geometry(self):
+        animator = FaceAnimator(transition_duration_ms=0)
+        expected = {
+            "neutral": (0.00, 0.00, 0.00, 1.00, 1.00),
+            "happy": (0.00, 0.55, 0.00, 1.00, 1.00),
+            "sad": (0.20, 0.00, -0.60, 0.95, 1.05),
+            "angry": (0.25, 0.00, 0.60, 1.00, 0.85),
+            "sleepy": (0.50, 0.00, 0.00, 1.00, 1.00),
+            "surprise": (0.00, 0.00, 0.00, 1.12, 0.70),
+        }
+        for mood, shape in expected.items():
+            with self.subTest(mood=mood):
+                self.assertTrue(animator.set_expression(mood, 1.0, 0))
+                frame = animator.tick(0)
+                actual = (frame["lid_top"], frame["lid_bottom"], frame["lid_tilt"],
+                          frame["eye_scale"], frame["pupil_scale"])
+                for actual_value, expected_value in zip(actual, shape):
+                    self.assertAlmostEqual(actual_value, expected_value, places=2)
+
+    def test_reference_moods_are_shared_by_calm_and_rugged_profiles(self):
+        manager = MotionEmotionManager()
+        moods = ("neutral", "happy", "sad", "angry", "sleepy", "surprise")
+        for mode in ("standard", "rugged"):
+            self.assertTrue(manager.set_mode(mode, 0))
+            for mood in moods:
+                with self.subTest(mode=mode, mood=mood):
+                    self.assertTrue(manager.set_emotion(mood, 1.0, 1), mood)
+                    self.assertEqual(manager.tick(2)["emotion"], mood)
+
+    def test_face_style_defaults_to_glossy_and_can_be_switched_to_flat(self):
+        display = FakeDisplay(240, 240)
+        renderer = FaceRenderer(display, 240, 240)
+        self.assertEqual(renderer.style, "glossy")
+        self.assertTrue(renderer.set_style("flat"))
+        self.assertEqual(renderer.style, "flat")
+        self.assertFalse(renderer.set_style("chrome"))
+        self.assertEqual(renderer.style, "flat")
+
+    def test_renderer_accepts_reference_mood_pose_and_eye_style(self):
+        for style in ("flat", "glossy"):
+            display = FakeDisplay(240, 240)
+            renderer = FaceRenderer(display, 240, 240)
+            renderer.render({
+                "mode": "rugged", "emotion": "sleepy", "eye_style": style,
+                "lid_top": 0.5, "lid_bottom": 0.0, "lid_tilt": 0.0,
+                "eye_scale": 1.0, "pupil_scale": 1.0, "blink": 0.0,
+            })
+            self.assertEqual(display.calls[0][0], "fill")
+            self.assertEqual(display.calls[-1][0], "show")
+            self.assertFalse(hasattr(renderer, "framebuffer"))
+
+    def test_reference_blink_exposes_a_continuous_lid_amount(self):
+        animator = FaceAnimator(blink_interval_ms=100, blink_duration_ms=190)
+        start = animator.tick(0)
+        closing = animator.tick(135)
+        closed = animator.tick(180)
+        opening = animator.tick(230)
+        self.assertEqual(start["blink"], 0.0)
+        self.assertGreater(closing["blink"], 0.0)
+        self.assertEqual(closed["blink"], 1.0)
+        self.assertGreater(opening["blink"], 0.0)
+        self.assertLess(opening["blink"], 1.0)
+
 
 
 if __name__ == "__main__":
