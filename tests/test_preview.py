@@ -70,6 +70,14 @@ class BrowserPreviewContractTests(unittest.TestCase):
         self.assertIn("mouthOpen", mouth_html)
         self.assertIn("requestAnimationFrame", mouth_html)
 
+    def test_glossy_palettes_are_pearl_white_for_calm_and_crimson_for_rugged(self):
+        self.assertIn('eyeTop:"#ffffff"', self.html)
+        self.assertIn('eyeMid:"#eef3f7"', self.html)
+        self.assertIn('eyeLow:"#96aab6"', self.html)
+        self.assertIn('eyeMid:"#e32335"', self.html)
+        self.assertIn('eyeLow:"#5d0610"', self.html)
+        self.assertIn('glow:"#ff283d"', self.html)
+
     def test_preview_has_no_external_runtime_assets(self):
         self.assertEqual(self.parser.external_assets, [])
         self.assertNotIn("@import", self.html.lower())
