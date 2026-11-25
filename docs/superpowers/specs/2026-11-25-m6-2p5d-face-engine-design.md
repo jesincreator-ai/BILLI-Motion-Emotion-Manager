@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-25  
 **Repository:** `jesincreator-ai/BILLI-Motion-Emotion-Manager`  
-**Status:** Proposed — awaiting owner approval  
+**Status:** Approved; implemented on feature branch — hardware validation pending  
 **Target hardware:** ESP32-WROOM-32, no PSRAM, ST7789 240×240 SPI display, RGB565
 
 ## 1. Intent
@@ -115,3 +115,13 @@ No independent subagent reviewer is available in this session, so this design wa
 - **Memory risk addressed:** No full-framebuffer design; bounded primitives and small reusable tables only.
 - **Integration risk addressed:** M6 remains graphics/emotion-only and keeps M7/M8 ownership boundaries intact.
 - **Open material dependency:** The exact low-level ST7789 write path and achievable frame rate must be confirmed from the checked-in driver and on the actual board before performance targets are finalized.
+
+
+## 11. Implementation verification status
+
+- Implemented the shared emotion contract, eased animation state, embedded 2.5D renderer, Canvas 2D preview, English/Tamil/Sinhala labels and CI checks on `design/m6-2p5d-face-engine`.
+- GitHub Actions passes the Python suite on Python 3.10, 3.11 and 3.12; the offline asset check and Node.js inline-JavaScript syntax check also pass.
+- Fake-display tests cover RGB565 bounds, clipping, allowed driver calls, no full-screen framebuffer, and a bounded display-transaction count.
+- Static responsive-preview checks and JavaScript parsing are complete. A real browser viewport/interaction session has not been independently exercised in this environment.
+- Physical ESP32-WROOM-32/ST7789 frame time, free heap, colour order, display rotation and visual calibration remain unverified. Do not infer these measurements from host CI.
+- Vercel configuration remains static HTML, but a live deployment URL for this feature branch has not been verified here.
