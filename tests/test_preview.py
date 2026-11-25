@@ -1,8 +1,6 @@
 import unittest
 from html.parser import HTMLParser
 from pathlib import Path
-import re
-
 
 ROOT = Path(__file__).resolve().parents[1]
 HTML_PATH = ROOT / "index.html"
@@ -65,7 +63,14 @@ class BrowserPreviewContractTests(unittest.TestCase):
             with self.subTest(feature=feature):
                 self.assertIn(feature, self.html)
 
-    def test_mouth_lab_is_offline_and_has_talk_volume_controls(self):\n        mouth_html = (ROOT / "mouth-lab.html").read_text(encoding="utf-8")\n        self.assertIn("Mouth & Emotion Lab", mouth_html)\n        self.assertIn("simulated speech volume", mouth_html.lower())\n        self.assertIn("mouthOpen", mouth_html) if "mouthOpen" in mouth_html else self.assertIn("mouthOpen", mouth_html)\n\n    def test_preview_has_no_external_runtime_assets(self):
+    def test_mouth_lab_is_offline_and_has_talk_volume_controls(self):
+        mouth_html = (ROOT / "mouth-lab.html").read_text(encoding="utf-8")
+        self.assertIn("BILLI · Mouth & Emotion Lab", mouth_html)
+        self.assertIn("simulated speech volume", mouth_html.lower())
+        self.assertIn("mouthOpen", mouth_html)
+        self.assertIn("requestAnimationFrame", mouth_html)
+
+    def test_preview_has_no_external_runtime_assets(self):
         self.assertEqual(self.parser.external_assets, [])
         self.assertNotIn("@import", self.html.lower())
 
