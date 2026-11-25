@@ -4,7 +4,7 @@ M6 is the offline face graphics and emotion subsystem for BILLI R-20. It provide
 
 ## Visual engine
 
-The face uses a stylized **2.5D** treatment: layered eye shells, recessed sockets, iris/pupil details, highlights, shadows, stepped light falloff, color grading and emotion-specific secondary effects. The browser preview uses Canvas 2D gradients and compositing. The ESP32 renderer uses quantized RGB565 bands and the existing ST7789 driver operations.
+The face uses a stylized **2.5D** treatment: layered eye shells, recessed sockets, iris/pupil details, highlights, shadows, stepped light falloff, color grading and emotion-specific secondary effects. The browser preview uses Canvas 2D gradients and compositing. The ESP32 renderer uses quantized RGB565 bands and the existing ST7789 driver operations. It measures each completed draw and adapts among three glow-detail tiers for the next frame.
 
 The ESP32-WROOM-32 does not have a programmable graphics GPU or PSRAM in this configuration. M6 therefore does **not** use full 3D meshes, PBR or GPU fragment shaders on the device. It draws a low-memory 2.5D approximation directly to the display and does not allocate a 240x240 RGB565 framebuffer (115,200 bytes). Browser effects are a higher-quality preview, not evidence of embedded frame rate.
 
