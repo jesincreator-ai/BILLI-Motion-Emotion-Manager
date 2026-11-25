@@ -93,14 +93,26 @@ class FaceAnimator:
 
         phase = (now_ms % 6000) * (2.0 * math.pi / 6000.0)
         breathe = 0.5 + (0.5 * math.sin(phase))
+
+        # Scale the expression back toward the neutral pose. This makes
+        # intensity meaningful on the embedded display, not just in telemetry.
+        strength = self.intensity
+        neutral = _POSES["neutral"]
+        eye_open = neutral[0] + ((eye_open - neutral[0]) * strength)
+        eye_tilt = eye_tilt * strength
+        brow_tilt = brow_tilt * strength
+        glow_base = neutral[3] + ((glow_base - neutral[3]) * strength)
+        tear_base = tear_base * strength
+        fire_base = fire_base * strength
+
         glow = _clamp(glow_base * (0.91 + (0.09 * breathe)), 0.0, 1.0)
         tear = _clamp(tear_base * (0.82 + (0.18 * math.sin(phase * 0.73))), 0.0, 1.0)
         fire = _clamp(fire_base * (0.72 + (0.28 * breathe)), 0.0, 1.0)
         blink = 1.0 if self._eyes_closed else 0.0
         if self._eyes_closed:
             eye_open = 0.05
-        gaze_x = self._pupil_x / 8.0
-        gaze_y = self._pupil_y / 5.0
+        gaze_x = _clamp((self._pupil_x / 8.0) + (math.sin(phase) * 0.035), -1.0, 1.0)
+        gaze_y = _clamp((self._pupil_y / 5.0) + (math.sin(phase * 0.77) * 0.025), -1.0, 1.0)
         self._current_pose = (
             eye_open, eye_tilt, brow_tilt, glow_base, tear_base, fire_base, self._mouth
         )
