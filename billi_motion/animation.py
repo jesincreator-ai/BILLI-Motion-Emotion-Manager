@@ -134,5 +134,5 @@ class FaceAnimator:
             "gaze_x": _clamp(gaze_x, -1.0, 1.0),
             "gaze_y": _clamp(gaze_y, -1.0, 1.0),
             "idle_breathe": breathe,
-            "mouth": self._mouth,
+            "mouth": self._mouth,\n            "mouth_open": 0.0,
         }
