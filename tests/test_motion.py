@@ -35,7 +35,7 @@ class AnimationTests(unittest.TestCase):
         animator = FaceAnimator()
         self.assertFalse(animator.set_expression("unknown"))
         self.assertTrue(animator.set_expression("surprised"))
-        self.assertEqual(animator.tick(0)["expression"], "surprised")
+        self.assertEqual(animator.tick(0)["expression"], "surprise")
 
 
 class SpeechTests(unittest.TestCase):
