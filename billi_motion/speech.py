@@ -24,7 +24,7 @@ class SpeechSynchronizer:
     def update(self, now_ms, amplitude):
         self.last_update_ms = int(now_ms)
         self.last_level = _clamp(amplitude, 0.0, 1.0)
-        self.smoothed_level += (self.last_level - self.smoothed_level) * self.smoothing
+        if self.last_level < self.open_threshold:\n            # Fast release below the mouth-open threshold prevents laggy closing.\n            self.smoothed_level = self.last_level\n        else:\n            self.smoothed_level += (self.last_level - self.smoothed_level) * self.smoothing
         if not self.active or self.smoothed_level < self.open_threshold:
             self.mouth = "closed"
         else:
