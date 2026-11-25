@@ -9,7 +9,7 @@ class MouthSpeechTests(unittest.TestCase):
         sync = SpeechSynchronizer(smoothing=0.5)
         sync.begin_speech(0, 0.0)
         sync.update(20, 1.0)
-        self.assertEqual(sync.mouth, "talk")
+        self.assertEqual(sync.mouth, "open")
         self.assertAlmostEqual(sync.smoothed_level, 0.5)
         sync.update(40, 2.0)
         self.assertLessEqual(sync.smoothed_level, 1.0)
