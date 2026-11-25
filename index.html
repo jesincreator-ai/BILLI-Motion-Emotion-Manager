@@ -109,16 +109,17 @@ const emotionReadout = document.getElementById("emotionReadout");
 const fpsReadout = document.getElementById("fps");
 const TAU = Math.PI * 2;
 const MODE_EMOTIONS = {
-  standard: ["happy", "sad", "surprise", "disappointment", "sorry", "crying"],
-  rugged: ["angry", "ego_fire"]
+  standard: ["speaking", "happy", "sad", "surprise", "disappointment", "sorry", "crying"],
+  rugged: ["speaking", "angry", "ego_fire"]
 };
 const LABELS = {
-  neutral: "Neutral idle", happy: "Happy", sad: "Sad", surprise: "Surprise",
+  neutral: "Neutral idle", speaking: "Speaking", happy: "Happy", sad: "Sad", surprise: "Surprise",
   disappointment: "Disappointment", sorry: "Sorry", crying: "Crying",
   angry: "Angry", ego_fire: "Ego-fire"
 };
 const POSES = {
   neutral: { open:.88, tilt:0, brow:0, glow:.34, tear:0, fire:0, mouth:"closed" },
+  speaking: { open:.82, tilt:0, brow:.02, glow:.52, tear:0, fire:0, mouth:"talk" },
   happy: { open:.78, tilt:-.05, brow:.10, glow:.62, tear:0, fire:0, mouth:"smile" },
   sad: { open:.62, tilt:.08, brow:.15, glow:.36, tear:0, fire:0, mouth:"frown" },
   surprise: { open:1, tilt:0, brow:0, glow:.88, tear:0, fire:0, mouth:"open" },
