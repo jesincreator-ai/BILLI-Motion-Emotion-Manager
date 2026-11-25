@@ -5,6 +5,9 @@ allocates a full-screen framebuffer and only calls fill, rect, fill_rect,
 line and show, so the embedded path remains MicroPython-friendly.
 """
 from math import sqrt
+import time
+
+from .timebase import diff_ms
 
 BLACK = 0x0000
 WHITE = 0xFFFF
@@ -27,6 +30,13 @@ class FaceRenderer:
         if self.width < 1 or self.height < 1:
             raise ValueError("display dimensions must be positive")
         self._scratch_bytes = 0
+        self.quality_tier = 1
+        self.render_time_ms = 0
+
+    def _clock_ms(self):
+        if hasattr(time, "ticks_ms"):
+            return time.ticks_ms()
+        return int(time.time() * 1000)
 
     def _fill_rect(self, x, y, width, height, color):
         x = int(x)
@@ -53,7 +63,12 @@ class FaceRenderer:
         ry = max(1, int(ry))
         # Quantized horizontal bands trade a small amount of curve smoothness
         # for far fewer SPI window transactions on the WROOM-32.
-        segments = 7 if ry >= 8 else 5
+        if self.quality_tier <= 0:
+            segments = 4 if ry >= 8 else 3
+        elif self.quality_tier == 1:
+            segments = 6 if ry >= 8 else 4
+        else:
+            segments = 8 if ry >= 8 else 5
         diameter = (ry * 2) + 1
         for band in range(segments):
             top = -ry + ((diameter * band) // segments)
@@ -165,6 +180,7 @@ class FaceRenderer:
         self._lens(cx + rx + 8, cy - rise - 1, 2, 2, ember)
 
     def render(self, frame):
+        started_at = self._clock_ms()
         d = self.display
         mode = "rugged" if frame.get("mode") == "rugged" else "standard"
         expression = frame.get("expression", frame.get("emotion", "neutral"))
@@ -201,3 +217,15 @@ class FaceRenderer:
         mouth = frame.get("mouth", "frown" if expression in ("sad", "crying", "sorry", "disappointment") else "closed")
         self._draw_mouth(self.width // 2, mouth_cy, mode, mouth, glow)
         d.show()
+
+        elapsed = diff_ms(self._clock_ms(), started_at)
+        if elapsed < 0:
+            elapsed = 0
+        self.render_time_ms = int(elapsed)
+        # Start at balanced quality. If a full draw exceeds the roughly
+        # 15-fps frame budget, step down; when comfortably under budget,
+        # restore detail one tier at a time. This adapts the next frame.
+        if self.render_time_ms >= 67:
+            self.quality_tier = max(0, self.quality_tier - 1)
+        elif self.render_time_ms <= 30:
+            self.quality_tier = min(2, self.quality_tier + 1)
