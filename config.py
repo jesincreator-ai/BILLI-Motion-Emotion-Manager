@@ -1,6 +1,12 @@
-"""Edit these values for the exact face display installed on your BILLI board."""
-DISPLAY_WIDTH = 128
-DISPLAY_HEIGHT = 64
+"""BILLI R-20 display and face configuration for the 1.3-inch square ST7789."""
+DISPLAY_DRIVER = "ST7789"
+DISPLAY_WIDTH = 240
+DISPLAY_HEIGHT = 240
+DISPLAY_COLOR_MODE = "RGB565"
+STANDARD_GRAPHICS_COLOR = 0xFFFF  # white
+RUGGED_GRAPHICS_COLOR = 0xF800    # red
+BACKGROUND_COLOR = 0x0000         # black
+DEFAULT_MODE = "standard"
 BLINK_INTERVAL_MS = 3200
 BLINK_DURATION_MS = 140
 EVENT_QUEUE_CAPACITY = 16
