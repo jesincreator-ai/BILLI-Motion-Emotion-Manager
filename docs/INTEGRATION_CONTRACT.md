@@ -8,7 +8,7 @@ M6 is a face-only subsystem. It does not access servo PWM and cannot bypass M8.
 - Call `tick(now_ms)` from the main cooperative loop using a monotonic millisecond clock shared with M7/M8.
 - Call `set_mode(mode, now_ms)`; accepted modes are `standard` (white) and `rugged` (red). `calm` is an alias for `standard`.
 - Call `set_emotion(name, intensity, now_ms)`; intensity is clamped to 0.0–1.0.
-- Call `begin_speech(now_ms)`, `update_speech_level(now_ms, normalized_level)` and `end_speech()` from the local voice/audio pipeline. Do not pass raw audio buffers into M6.
+- Call `begin_speech(now_ms)`, `update_speech_level(now_ms, normalized_level)` and `end_speech()` from the local voice/audio pipeline. The level must be normalized 0.0–1.0 amplitude/RMS, sampled at a cooperative cadence; M6 smooths it and maps it to a talking-mouth opening. Do not pass raw audio buffers into M6.\n- Speech mouth is an overlay (`mouth="talk"`, `mouth_open` 0.0–1.0). The selected emotion remains active underneath; after `end_speech()`, the mouth returns to that emotion's resting shape.
 - Call `look(x, y)` with bounded gaze offsets when the integration layer has a gaze target.
 - Drain events using `next_event()`; the fixed-capacity queue drops the oldest event on overflow.
 
