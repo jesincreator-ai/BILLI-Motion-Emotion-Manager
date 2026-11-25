@@ -32,6 +32,14 @@ class FaceRenderer:
         self._scratch_bytes = 0
         self.quality_tier = 1
         self.render_time_ms = 0
+        self.style = "glossy"
+
+    def set_style(self, style):
+        """Select 'flat' or 'glossy' eye rendering; reject unknown styles."""
+        if style not in ("flat", "glossy"):
+            return False
+        self.style = style
+        return True
 
     def _clock_ms(self):
         if hasattr(time, "ticks_ms"):
@@ -82,92 +90,136 @@ class FaceRenderer:
             self._fill_rect(int(cx) + shift - half, int(cy) + top,
                             (half * 2) + 1, bottom - top + 1, color)
 
-    def _draw_eye(self, cx, cy, rx, ry, mode, gaze_x, gaze_y, eye_tilt, glow, eye_open, expression):
+    def _round_rect(self, cx, cy, width, height, radius, color):
+        """Draw a rounded rectangle as a small set of clipped RGB565 bands."""
+        width = max(2, int(width))
+        height = max(2, int(height))
+        radius = max(1, min(int(radius), width // 2, height // 2))
+        if self.quality_tier <= 0:
+            segments = 6
+        elif self.quality_tier == 1:
+            segments = 8
+        else:
+            segments = 10
+        diameter = height
+        for band in range(segments):
+            top = -height // 2 + ((diameter * band) // segments)
+            bottom = -height // 2 + ((diameter * (band + 1)) // segments) - 1
+            if bottom < top:
+                bottom = top
+            mid_y = (top + bottom) // 2
+            corner_y = max(0, abs(mid_y) - (height / 2.0 - radius))
+            if corner_y >= radius:
+                inset = radius
+            else:
+                inset = radius - int(sqrt(max(0.0, (radius * radius) - (corner_y * corner_y))))
+            half = max(1, (width // 2) - inset)
+            self._fill_rect(cx - half, cy + top, half * 2, bottom - top + 1, color)
+
+    def _draw_eye(self, cx, cy, mirror, mode, style, gaze_x, gaze_y,
+                  lid_top, lid_bottom, lid_tilt, eye_scale, pupil_scale, blink):
+        """Render the reference oval or glossy rounded-rectangle eye."""
         rugged = mode == "rugged"
+        scale = max(0.7, min(1.2, float(eye_scale)))
+        blink = max(0.0, min(1.0, float(blink)))
         if rugged:
-            # Saturated crimson surface, deep red socket and warm reflected light.
-            halo_outer = rgb565(66, 0, 7)
-            halo_mid = rgb565(132, 2, 14)
-            halo_inner = rgb565(218, 12, 26)
-            shell = rgb565(112, 13, 27)
-            socket = rgb565(18, 3, 8)
-            lens = rgb565(255, 56, 66)
-            lens_low = rgb565(126, 7, 20)
-            iris = rgb565(255, 96, 82)
+            eye_color = rgb565(255, 56, 66)
+            eye_low = rgb565(126, 7, 20)
+            rim = rgb565(255, 150, 160)
+            pupil = rgb565(24, 2, 7)
+            flat_pupil = rgb565(34, 2, 8)
             highlight = WHITE
         else:
-            # Calm is a pearly white lens with cool graphite-blue shading,
-            # not a cyan-filled flat eye.
-            halo_outer = rgb565(10, 24, 34)
-            halo_mid = rgb565(28, 57, 72)
-            halo_inner = rgb565(72, 111, 130)
-            shell = rgb565(112, 139, 153)
-            socket = rgb565(7, 17, 25)
-            lens = rgb565(242, 246, 250)
-            lens_low = rgb565(150, 177, 191)
-            iris = rgb565(110, 176, 198)
+            eye_color = rgb565(242, 246, 250)
+            eye_low = rgb565(150, 177, 191)
+            rim = rgb565(183, 219, 232)
+            pupil = rgb565(5, 17, 26)
+            flat_pupil = rgb565(8, 24, 34)
             highlight = WHITE
 
-        strength = max(0.0, min(1.0, float(glow)))
-        outer = int((4 + (8 * strength)))
-        mid = int((2 + (5 * strength)))
-        self._lens(cx, cy, rx + outer, ry + 7, halo_outer, eye_tilt)
-        self._lens(cx, cy, rx + mid, ry + 4, halo_mid, eye_tilt)
-        self._lens(cx, cy, rx + 2, ry + 2, halo_inner, eye_tilt)
-        self._lens(cx, cy, rx, ry, shell, eye_tilt)
-        self._lens(cx, cy + 1, rx - 4, max(2, ry - 4), socket, eye_tilt)
-        # Lit surface is shaded in three horizontal bands rather than a flat outline.
-        self._lens(cx, cy - 1, rx - 7, max(2, ry - 8), lens, eye_tilt)
-        self._lens(cx, cy + max(1, ry // 4), rx - 9, max(2, ry // 2), lens_low, eye_tilt)
+        is_flat = style == "flat"
+        width = int((72 if is_flat else 84) * scale)
+        height = int(98 * scale)
+        gx = float(gaze_x)
+        gy = float(gaze_y)
+        eye_cx = int(cx + gx * (28 if is_flat else 18))
+        eye_cy = int(cy + gy * (22 if is_flat else 12))
+        x0 = eye_cx - width // 2
+        y0 = eye_cy - height // 2
 
-        px = int(cx + (float(gaze_x) * 9))
-        py = int(cy + (float(gaze_y) * 6))
-        self._lens(px, py, max(4, rx // 3), max(5, ry // 2), iris)
-        self._lens(px, py + 1, max(2, rx // 7), max(3, ry // 4), socket)
-        # Two compact specular reflections recreate the glossy lens catchlights
-        # without introducing a sprite, canvas or temporary framebuffer.
-        self._lens(px - max(2, rx // 8), py - max(3, ry // 5),
-                   max(3, rx // 10), max(4, ry // 8), highlight)
-        self._lens(px + max(3, rx // 6), py + max(3, ry // 6),
-                   2, 3, highlight)
-        self._line(cx - rx + 2, cy - (ry // 3), cx, cy - ry + 3, highlight)
-        self._line(cx, cy - ry + 3, cx + rx - 2, cy - (ry // 3), highlight)
-        self._draw_lids(cx, cy, rx, ry, eye_open, eye_tilt, expression)
+        if is_flat:
+            self._lens(eye_cx, eye_cy, width // 2, height // 2, eye_color)
+            px = int(eye_cx + gx * 20)
+            py = int(eye_cy + gy * 22)
+            self._lens(px, py, max(3, int(7 * pupil_scale)),
+                       max(5, int(17 * pupil_scale)), flat_pupil)
+        else:
+            radius = int(width * 0.38)
+            self._round_rect(eye_cx, eye_cy, width, height, radius, rim)
+            inset = max(3, int(6 * scale))
+            inner_w = width - (inset * 2)
+            inner_h = height - (inset * 2)
+            inner_radius = max(2, radius - inset)
+            self._round_rect(eye_cx, eye_cy, inner_w, inner_h,
+                             inner_radius, eye_color)
+            # Low-side shading gives the bright surface volume without a
+            # framebuffer or a high-cost per-pixel gradient.
+            self._round_rect(eye_cx, eye_cy + int(height * 0.16),
+                             max(2, inner_w - inset * 2),
+                             max(2, int(inner_h * 0.36)),
+                             max(2, inner_radius // 2), eye_low)
+            px = int(eye_cx + gx * 14)
+            py = int(eye_cy + gy * 10)
+            pupil_rx = max(4, int(20 * scale * pupil_scale))
+            pupil_ry = max(6, int(25 * scale * pupil_scale))
+            self._lens(px, py, pupil_rx, pupil_ry, pupil)
+            self._lens(px - max(3, pupil_rx // 2), py - max(4, pupil_ry // 2),
+                       max(3, int(5 * scale)), max(3, int(7 * scale)), highlight)
+            self._lens(px + max(3, pupil_rx // 2), py + max(3, pupil_ry // 2),
+                       max(2, int(2.5 * scale)), max(2, int(3 * scale)), highlight)
 
-    def _draw_lids(self, cx, cy, rx, ry, eye_open, eye_tilt, expression):
-        """Mask each eye's upper contour with a curved, quantized lid edge.
+        self._draw_lids(
+            eye_cx, eye_cy, width, height,
+            lid_top, lid_bottom, lid_tilt, blink, mirror
+        )
 
-        This follows the reference's column-wise lid carving, using a small
-        bounded number of spans instead of a full off-screen canvas.
+    def _draw_lids(self, cx, cy, width, height, lid_top, lid_bottom,
+                   lid_tilt, blink, mirror):
+        """Carve curved upper/lower lids using bounded vertical span bands.
+
+        This is a MicroPython/direct-SPI adaptation of the reference's
+        column-wise lid equations. The band count trades curve smoothness
+        against display transactions on the ESP32-WROOM-32.
         """
         if self.quality_tier <= 0:
-            segments = 5
+            segments = 6
         elif self.quality_tier == 1:
-            segments = 7
-        else:
             segments = 9
+        else:
+            segments = 12
 
-        aperture = max(0.05, min(1.0, float(eye_open)))
-        closure = int((1.0 - aperture) * ry * 1.25)
-        top_edge = cy - ry - 2
+        top_shape = float(lid_top) * (1.0 - blink) + (0.55 * blink)
+        tilt = float(lid_tilt) * (1.0 - blink)
+        arc = float(lid_bottom) * (1.0 - blink)
+        lower_flat = 0.45 * blink
+        x0 = cx - width // 2 - 1
+        top_edge = cy - height // 2 - 2
+        bottom_edge = cy + height // 2 + 2
         for band in range(segments):
-            x0 = cx - rx + ((2 * rx * band) // segments)
-            x1 = cx - rx + ((2 * rx * (band + 1)) // segments)
-            if x1 <= x0:
+            left = x0 + ((width + 2) * band // segments)
+            right = x0 + ((width + 2) * (band + 1) // segments)
+            if right <= left:
                 continue
-            mid_x = (x0 + x1) // 2
-            u = (mid_x - cx) / float(max(1, rx))
-            arch = int(ry * (1.0 - sqrt(max(0.0, 1.0 - (u * u)))))
-            slope = int(float(eye_tilt) * u * ry * 0.38)
-            lid_y = cy - ry + arch + closure + slope
-            self._fill_rect(x0, top_edge, x1 - x0, max(0, lid_y - top_edge), BLACK)
-
-            # Happy eyes close gently from below, leaving a crescent-shaped lens.
-            if expression == "happy":
-                lower_arch = int(ry * sqrt(max(0.0, 1.0 - (u * u))))
-                smile_lid = cy + lower_arch - int((1.0 - (u * u)) * ry * 0.24)
-                self._fill_rect(x0, smile_lid, x1 - x0,
-                                max(0, cy + ry + 2 - smile_lid), BLACK)
+            mid_x = (left + right) // 2
+            u = (mid_x - cx) / float(max(1, width * 0.5))
+            yt = cy - height // 2 + top_shape * height + tilt * mirror * u * height * 0.35
+            if yt > cy - height // 2:
+                self._fill_rect(left, top_edge, right - left,
+                                int(yt) - top_edge, BLACK)
+            yb = cy + height // 2 - height * (lower_flat + arc * (1.0 - u * u))
+            if yb < cy + height // 2:
+                self._fill_rect(left, int(yb), right - left,
+                                bottom_edge - int(yb), BLACK)
 
     def _draw_mouth(self, cx, cy, mode, mouth, glow, mouth_open=0.0):
         rugged = mode == "rugged"
@@ -237,6 +289,24 @@ class FaceRenderer:
         mode = "rugged" if frame.get("mode") == "rugged" else "standard"
         expression = frame.get("expression", frame.get("emotion", "neutral"))
         eye_open = max(0.05, min(1.0, float(frame.get("eye_open", 0.88))))
+        eye_style = frame.get("eye_style", self.style)
+        if eye_style not in ("flat", "glossy"):
+            eye_style = self.style
+        lid_defaults = {
+            "happy": (0.0, 0.55, 0.0, 1.0, 1.0),
+            "sad": (0.20, 0.0, -0.60, 0.95, 1.05),
+            "angry": (0.25, 0.0, 0.60, 1.0, 0.85),
+            "sleepy": (0.50, 0.0, 0.0, 1.0, 1.0),
+            "surprise": (0.0, 0.0, 0.0, 1.12, 0.70),
+            "surprised": (0.0, 0.0, 0.0, 1.12, 0.70),
+        }
+        defaults = lid_defaults.get(expression, (0.0, 0.0, 0.0, 1.0, 1.0))
+        lid_top = max(0.0, min(1.0, float(frame.get("lid_top", defaults[0]))))
+        lid_bottom = max(0.0, min(1.0, float(frame.get("lid_bottom", defaults[1]))))
+        lid_tilt = max(-1.0, min(1.0, float(frame.get("lid_tilt", defaults[2]))))
+        eye_scale = max(0.7, min(1.2, float(frame.get("eye_scale", defaults[3]))))
+        pupil_scale = max(0.6, min(1.2, float(frame.get("pupil_scale", defaults[4]))))
+        blink = max(0.0, min(1.0, float(frame.get("blink", 0.0))))
         glow = max(0.0, min(1.0, float(frame.get("glow", 0.38))))
         gaze_x = max(-1.0, min(1.0, float(frame.get("gaze_x", frame.get("pupil_x", 0) / 8.0))))
         gaze_y = max(-1.0, min(1.0, float(frame.get("gaze_y", frame.get("pupil_y", 0) / 5.0))))
@@ -246,26 +316,23 @@ class FaceRenderer:
         fire = max(0.0, min(1.0, float(frame.get("fire", 0.0))))
 
         d.fill(BLACK)
-        scale_x = self.width / 240.0
-        scale_y = self.height / 240.0
-        scale = min(scale_x, scale_y)
-        rx = max(10, int(32 * scale))
-        base_ry = max(8, int(29 * scale))
-        ry = max(3, int(base_ry * eye_open))
-        left_cx = int(self.width * 0.33)
-        right_cx = int(self.width * 0.67)
-        eye_cy = int(self.height * 0.39)
+        scale = min(self.width / 240.0, self.height / 240.0)
+        rx = max(10, int((36 if eye_style == "flat" else 42) * eye_scale * scale))
+        ry = max(8, int(49 * eye_scale * scale))
+        eye_width = rx * 2
+        eye_height = ry * 2
+        left_cx = int(self.width * 0.285)
+        right_cx = int(self.width * 0.715)
+        eye_cy = int(self.height * 0.50)
         mouth_cy = int(self.height * 0.76)
-        self._draw_eye(left_cx, eye_cy, rx, ry, mode, gaze_x, gaze_y, eye_tilt, glow, eye_open, expression)
-        self._draw_eye(right_cx, eye_cy, rx, ry, mode, gaze_x, gaze_y, -eye_tilt, glow, eye_open, expression)
+        self._draw_eye(left_cx, eye_cy, +1, mode, eye_style, gaze_x, gaze_y,
+                       lid_top, lid_bottom, lid_tilt, eye_scale, pupil_scale, blink)
+        self._draw_eye(right_cx, eye_cy, -1, mode, eye_style, gaze_x, gaze_y,
+                       lid_top, lid_bottom, lid_tilt, eye_scale, pupil_scale, blink)
         if tear > 0:
             self._draw_tears(left_cx, eye_cy, rx, ry, tear, mode)
         if fire > 0:
             self._draw_fire(right_cx, eye_cy, rx, fire)
-        self._line(left_cx - rx, eye_cy - ry - 5, left_cx + rx, eye_cy - ry - 5 + int(brow_tilt * 8),
-                   rgb565(230, 244, 255) if mode == "standard" else rgb565(255, 80, 80))
-        self._line(right_cx - rx, eye_cy - ry - 5 - int(brow_tilt * 8), right_cx + rx,
-                   eye_cy - ry - 5, rgb565(230, 244, 255) if mode == "standard" else rgb565(255, 80, 80))
         mouth = frame.get("mouth_pose", frame.get("mouth", "frown" if expression in ("sad", "crying", "sorry", "disappointment") else "closed"))
         mouth_open = max(0.0, min(1.0, float(frame.get("mouth_open", 0.0))))
         self._draw_mouth(self.width // 2, mouth_cy, mode, mouth, glow, mouth_open)
