@@ -154,5 +154,5 @@ The actual device acceptance run remains a required owner-side check: flash the 
 - [x] Port two bounded catchlights and quantized curved lid occlusion using clipped RGB565 spans.
 - [x] Update offline preview colours to pearl white (Calm) and crimson red (Rugged).
 - [x] Document reference attribution and why its ESP32-S3/Arduino/LovyanGFX firmware is not installed as-is on WROOM-32 MicroPython.
-- [ ] Run the complete Python suite and offline preview checker on the final branch head.
-- [ ] Inspect the resulting PR diff and CI run; physical display calibration remains unverified.
+- [x] Run the complete Python suite on Python 3.10, 3.11 and 3.12 and validate the offline browser preview on the final implementation branch; all three matrix jobs pass.
+- [x] Inspect the PR diff and latest CI run; physical WROOM-32/ST7789 display calibration, frame rate and free-heap measurements remain unverified.
