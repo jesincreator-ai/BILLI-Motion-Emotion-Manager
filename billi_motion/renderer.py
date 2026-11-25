@@ -51,12 +51,21 @@ class FaceRenderer:
         """Fill a tilted ellipse-like lens using one clipped horizontal span per row."""
         rx = max(1, int(rx))
         ry = max(1, int(ry))
-        for dy in range(-ry, ry + 1):
+        # Quantized horizontal bands trade a small amount of curve smoothness
+        # for far fewer SPI window transactions on the WROOM-32.
+        segments = 7 if ry >= 8 else 5
+        diameter = (ry * 2) + 1
+        for band in range(segments):
+            top = -ry + ((diameter * band) // segments)
+            bottom = -ry + ((diameter * (band + 1)) // segments) - 1
+            if bottom < top:
+                bottom = top
+            dy = (top + bottom) // 2
             normalized = dy / float(ry)
             half = int(rx * sqrt(max(0.0, 1.0 - (normalized * normalized))))
             shift = int(float(tilt) * dy * 0.24)
-            y = int(cy) + dy
-            self._fill_rect(int(cx) + shift - half, y, (half * 2) + 1, 1, color)
+            self._fill_rect(int(cx) + shift - half, int(cy) + top,
+                            (half * 2) + 1, bottom - top + 1, color)
 
     def _draw_eye(self, cx, cy, rx, ry, mode, gaze_x, gaze_y, eye_tilt, glow, eye_open):
         rugged = mode == "rugged"
