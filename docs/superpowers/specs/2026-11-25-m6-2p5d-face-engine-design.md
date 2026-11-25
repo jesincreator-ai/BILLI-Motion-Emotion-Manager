@@ -124,4 +124,4 @@ No independent subagent reviewer is available in this session, so this design wa
 - Fake-display tests cover RGB565 bounds, clipping, allowed driver calls, no full-screen framebuffer, and a bounded display-transaction count.
 - Static responsive-preview checks and JavaScript parsing are complete. A real browser viewport/interaction session has not been independently exercised in this environment.
 - Physical ESP32-WROOM-32/ST7789 frame time, free heap, colour order, display rotation and visual calibration remain unverified. Do not infer these measurements from host CI.
-- Vercel configuration remains static HTML, but a live deployment URL for this feature branch has not been verified here.
+- Vercel configuration remains static HTML. The latest commit's five Vercel status contexts report `build-rate-limit` and link to the Vercel team upgrade/rate-limit page; a live deployment URL for this feature branch has not been verified.
