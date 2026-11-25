@@ -54,7 +54,7 @@ class BrowserPreviewContractTests(unittest.TestCase):
 
     def test_preview_has_no_external_runtime_assets(self):
         self.assertEqual(self.parser.external_assets, [])
-        self.assertNotRegex(self.html, re.compile(r"@import\\s+url\\(\\s*['\"]?https?://", re.I))
+        self.assertNotIn("@import", self.html.lower())
 
 
 if __name__ == "__main__":
