@@ -1,0 +1,8 @@
+[project]
+name = "billi-motion-emotion-manager"
+version = "1.0.0"
+description = "Offline MicroPython facial animation and emotion manager for BILLI R-20"
+requires-python = ">=3.8"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
