@@ -2,6 +2,12 @@
 
 Offline facial-expression, animation and display-theme manager for BILLI R-20. The manager core is MicroPython-friendly and desktop-testable.
 
+## Browser test / Vercel deployment
+
+The repository root contains a static `index.html` browser demo. Import this repository into Vercel and deploy it as a static site (Framework Preset: **Other**; leave Build Command and Output Directory empty). The demo lets you switch between standard white and rugged red face themes, select expressions, blink, and preview browser speech.
+
+The browser demo is a simulation. It does not connect to an ESP32 or drive physical hardware.
+
 ## Display target
 
 The current hardware target is the **1.3-inch square 240x240 ST7789 SPI TFT**. The renderer uses RGB565 colours and a black background:
@@ -33,6 +39,8 @@ M1 should send the same mode to M6 and Voice Lite. M6 owns face graphics only; i
 - Display driver is supplied by the hardware project; no runtime download.
 
 ## ESP32 setup
+
+The MicroPython entry point is stored at `firmware/main.py` so Vercel does not mistake it for a Python web-function entry point. When flashing the robot, copy it to the ESP32 as `main.py` together with the `billi_motion/` package and hardware driver files.
 
 Initialize a MicroPython ST7789 driver for 240x240 RGB565 and pass the display object to `ESP32FaceDisplay(display, 240, 240)`. The driver must expose `fill`, `rect`, `fill_rect`, `line`, and `show`. Confirm the driver colour order and rotation on the actual module.
 
