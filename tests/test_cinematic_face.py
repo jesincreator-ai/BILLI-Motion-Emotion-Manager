@@ -166,6 +166,16 @@ class EmbeddedRendererTests(unittest.TestCase):
         self.assertEqual(display.calls[-1][0], "show")
         self.assertFalse(hasattr(renderer, "framebuffer"))
 
+    def test_renderer_uses_a_bounded_number_of_display_transactions(self):
+        display = FakeDisplay(240, 240)
+        renderer = FaceRenderer(display, 240, 240)
+        renderer.render({
+            "mode": "rugged", "emotion": "ego_fire", "eye_open": 0.9,
+            "glow": 1.0, "fire": 1.0, "tear": 0.0, "mouth": "open",
+        })
+        # A full-frame draw should remain below this transaction budget.
+        self.assertLess(len(display.calls), 230)
+
     def test_renderer_clips_to_non_square_display(self):
         display = FakeDisplay(160, 120)
         renderer = FaceRenderer(display, 160, 120)
