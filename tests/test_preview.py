@@ -65,7 +65,7 @@ class BrowserPreviewContractTests(unittest.TestCase):
             with self.subTest(feature=feature):
                 self.assertIn(feature, self.html)
 
-    def test_preview_has_no_external_runtime_assets(self):
+    def test_mouth_lab_is_offline_and_has_talk_volume_controls(self):\n        mouth_html = (ROOT / "mouth-lab.html").read_text(encoding="utf-8")\n        self.assertIn("Mouth & Emotion Lab", mouth_html)\n        self.assertIn("simulated speech volume", mouth_html.lower())\n        self.assertIn("mouthOpen", mouth_html) if "mouthOpen" in mouth_html else self.assertIn("mouthOpen", mouth_html)\n\n    def test_preview_has_no_external_runtime_assets(self):
         self.assertEqual(self.parser.external_assets, [])
         self.assertNotIn("@import", self.html.lower())
 
