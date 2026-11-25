@@ -3,7 +3,7 @@ import unittest
 from billi_motion.animation import FaceAnimator
 from billi_motion.emotion import EMOTIONS, EmotionEngine
 from billi_motion.manager import MotionEmotionManager
-from billi_motion.renderer import FaceRenderer
+from billi_motion.renderer import FaceRenderer, rgb565
 
 
 STANDARD = ("happy", "sad", "surprise", "disappointment", "sorry", "crying")
