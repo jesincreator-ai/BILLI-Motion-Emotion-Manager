@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the offline M6 preview and parse its inline JavaScript with Node."""
+"""Validate both offline M6 previews and parse their inline JavaScript with Node."""
 from html.parser import HTMLParser
 from pathlib import Path
 import shutil
@@ -7,9 +7,8 @@ import subprocess
 import sys
 import tempfile
 
-
 ROOT = Path(__file__).resolve().parents[1]
-HTML_FILE = ROOT / "index.html"\nMOUTH_FILE = ROOT / "mouth-lab.html"
+HTML_FILES = (ROOT / "index.html", ROOT / "mouth-lab.html")
 
 
 class PreviewAssets(HTMLParser):
@@ -45,45 +44,44 @@ class PreviewAssets(HTMLParser):
 
 
 def main():
-    if not HTML_FILE.is_file():
-        print("ERROR: index.html is missing", file=sys.stderr)
-        return 1
-
-    parser = PreviewAssets()
-    parser.feed(HTML_FILE.read_text(encoding="utf-8"))
-
-    if parser.script_sources or parser.external_assets:
-        print("ERROR: offline preview references external runtime assets",
-              file=sys.stderr)
-        print(parser.script_sources + parser.external_assets, file=sys.stderr)
-        return 1
-    if len(parser.inline_scripts) != 1 or not parser.inline_scripts[0].strip():
-        print("ERROR: expected exactly one non-empty inline application script",
-              file=sys.stderr)
-        return 1
+    parsers = []
+    for html_file in HTML_FILES:
+        if not html_file.is_file():
+            print("ERROR: missing offline preview: " + str(html_file), file=sys.stderr)
+            return 1
+        parser = PreviewAssets()
+        parser.feed(html_file.read_text(encoding="utf-8"))
+        if parser.script_sources or parser.external_assets:
+            print("ERROR: external runtime assets found in " + str(html_file),
+                  file=sys.stderr)
+            print(parser.script_sources + parser.external_assets, file=sys.stderr)
+            return 1
+        if len(parser.inline_scripts) != 1 or not parser.inline_scripts[0].strip():
+            print("ERROR: expected one inline application script in " + str(html_file),
+                  file=sys.stderr)
+            return 1
+        parsers.append((html_file, parser))
 
     node = shutil.which("node")
     if node is None:
-        print("ERROR: Node.js is required for preview syntax validation",
-              file=sys.stderr)
+        print("ERROR: Node.js is required for preview syntax validation", file=sys.stderr)
         return 1
 
     with tempfile.TemporaryDirectory(prefix="m6-preview-") as temp_dir:
         script = Path(temp_dir) / "preview.js"
-        script.write_text(parser.inline_scripts[0], encoding="utf-8")
-        result = subprocess.run(
-            [node, "--check", str(script)],
-            cwd=str(ROOT),
-            check=False,
-            text=True,
-            capture_output=True,
-        )
-    if result.returncode:
-        print(result.stdout, end="")
-        print(result.stderr, end="", file=sys.stderr)
-        return result.returncode
+        for html_file, parser in parsers:
+            script.write_text(parser.inline_scripts[0], encoding="utf-8")
+            result = subprocess.run(
+                [node, "--check", str(script)], cwd=str(ROOT), check=False,
+                text=True, capture_output=True,
+            )
+            if result.returncode:
+                print("JavaScript syntax error in " + str(html_file), file=sys.stderr)
+                print(result.stdout, end="")
+                print(result.stderr, end="", file=sys.stderr)
+                return result.returncode
 
-    print("PASS: preview is offline and inline JavaScript parses with Node.js")
+    print("PASS: both previews are offline and JavaScript syntax is valid")
     return 0
 
 
