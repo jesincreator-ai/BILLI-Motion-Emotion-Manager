@@ -19,7 +19,7 @@ class SpeechSynchronizer:
         self.last_update_ms = int(now_ms)
         self.last_level = _clamp(intensity, 0.0, 1.0)
         self.smoothed_level = self.last_level
-        self.mouth = "talk" if self.smoothed_level >= self.open_threshold else "closed"
+        self.mouth = "open" if self.smoothed_level >= self.open_threshold else "closed"
 
     def update(self, now_ms, amplitude):
         self.last_update_ms = int(now_ms)
@@ -28,7 +28,7 @@ class SpeechSynchronizer:
         if not self.active or self.smoothed_level < self.open_threshold:
             self.mouth = "closed"
         else:
-            self.mouth = "talk"
+            self.mouth = "open"
         return self.mouth
 
     def end_speech(self):
