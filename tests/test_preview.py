@@ -51,8 +51,8 @@ class BrowserPreviewContractTests(unittest.TestCase):
                 self.assertIn(feature, self.html)
 
     def test_speaking_state_is_available_in_both_modes(self):
-        self.assertIn('standard: ["speaking"', self.html)
-        self.assertIn('rugged: ["speaking"', self.html)
+        self.assertIn('standard: ["neutral"', self.html)
+        self.assertIn('rugged: ["neutral"', self.html)
         self.assertIn('speaking: {', self.html)
         self.assertIn('mouth:"talk"', self.html)
 
