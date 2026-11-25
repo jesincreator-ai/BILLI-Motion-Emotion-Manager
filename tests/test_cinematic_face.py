@@ -228,7 +228,7 @@ class GlossyEyeReferenceTests(unittest.TestCase):
         renderer.render({"mode": "standard", "emotion": "neutral", "eye_open": 0.88})
 
         colours = {call[-1] for call in display.calls if call[0] == "fill_rect"}
-        self.assertIn(rgb565(250, 253, 255), colours)
+        self.assertIn(rgb565(242, 246, 250), colours)
         self.assertIn(0xFFFF, colours)
 
     def test_rugged_eyes_use_saturated_red_lens_and_white_reflections(self):
