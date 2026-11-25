@@ -1,4 +1,4 @@
-"""Top-level face and emotion manager with a tiny, bounded event queue."""
+"""Top-level face/emotion manager with bounded events and selectable visual modes."""
 from .emotion import EmotionEngine
 from .animation import FaceAnimator
 from .speech import SpeechSynchronizer
@@ -6,11 +6,23 @@ from .events import EventQueue
 
 
 class MotionEmotionManager:
-    def __init__(self, event_capacity=16):
+    MODES = ("standard", "rugged")
+
+    def __init__(self, event_capacity=16, mode="standard"):
         self.emotion = EmotionEngine()
         self.animator = FaceAnimator()
         self.speech = SpeechSynchronizer()
         self.events = EventQueue(event_capacity)
+        self.mode = mode if mode in self.MODES else "standard"
+
+    def set_mode(self, mode, now_ms=0):
+        """Switch the face theme. Standard=white; rugged=red on black."""
+        if mode not in self.MODES:
+            return False
+        if mode != self.mode:
+            self.mode = mode
+            self.events.push({"kind": "mode", "value": mode, "at_ms": int(now_ms)})
+        return True
 
     def set_emotion(self, emotion, intensity=1.0, now_ms=0):
         if not self.emotion.set_emotion(emotion, intensity, now_ms):
@@ -38,6 +50,8 @@ class MotionEmotionManager:
         if self.speech.active:
             frame["mouth"] = self.speech.mouth
         frame["emotion"] = self.emotion.get_state()["emotion"]
+        frame["mode"] = self.mode
+        frame["color"] = "red" if self.mode == "rugged" else "white"
         return frame
 
     def next_event(self):
