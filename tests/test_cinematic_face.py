@@ -101,6 +101,24 @@ class CinematicAnimationTests(unittest.TestCase):
         animator.set_expression("ego_fire", 1.0, 0)
         self.assertGreater(animator.tick(10)["fire"], 0.0)
 
+    def test_intensity_scales_expression_pose_and_glow(self):
+        full = FaceAnimator(transition_duration_ms=0)
+        soft = FaceAnimator(transition_duration_ms=0)
+        self.assertTrue(full.set_expression("angry", 1.0, 0))
+        self.assertTrue(soft.set_expression("angry", 0.2, 0))
+        full_frame = full.tick(10)
+        soft_frame = soft.tick(10)
+        self.assertLess(abs(soft_frame["eye_tilt"]), abs(full_frame["eye_tilt"]))
+        self.assertLess(soft_frame["glow"], full_frame["glow"])
+
+    def test_idle_gaze_has_bounded_subtle_drift(self):
+        animator = FaceAnimator()
+        animator.look(0, 0)
+        frame = animator.tick(1000)
+        self.assertGreater(abs(frame["gaze_x"]) + abs(frame["gaze_y"]), 0.0)
+        self.assertLessEqual(abs(frame["gaze_x"]), 0.1)
+        self.assertLessEqual(abs(frame["gaze_y"]), 0.1)
+
     def test_look_is_bounded_and_large_time_step_does_not_loop(self):
         animator = FaceAnimator()
         animator.look(999, -999)
