@@ -180,6 +180,13 @@ class FakeDisplay:
 
 
 class EmbeddedRendererTests(unittest.TestCase):
+    def test_renderer_reports_bounded_adaptive_quality_diagnostics(self):
+        display = FakeDisplay(240, 240)
+        renderer = FaceRenderer(display, 240, 240)
+        renderer.render({"mode": "standard", "emotion": "happy"})
+        self.assertIn(renderer.quality_tier, (0, 1, 2))
+        self.assertGreaterEqual(renderer.render_time_ms, 0)
+
     def test_renderer_uses_only_supported_driver_methods_and_rgb565(self):
         display = FakeDisplay(240, 240)
         renderer = FaceRenderer(display, 240, 240)
