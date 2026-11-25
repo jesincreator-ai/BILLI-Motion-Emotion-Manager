@@ -9,7 +9,7 @@ import tempfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
-HTML_FILE = ROOT / "index.html"
+HTML_FILE = ROOT / "index.html"\nMOUTH_FILE = ROOT / "mouth-lab.html"
 
 
 class PreviewAssets(HTMLParser):
