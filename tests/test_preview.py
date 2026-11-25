@@ -78,6 +78,26 @@ class BrowserPreviewContractTests(unittest.TestCase):
         self.assertIn('eyeLow:"#5d0610"', self.html)
         self.assertIn('glow:"#ff283d"', self.html)
 
+    def test_reference_eye_styles_are_selectable_with_glossy_default(self):
+        self.assertIn('eyeStyle:"glossy"', self.html)
+        self.assertIn('id="flatStyle"', self.html)
+        self.assertIn('id="glossyStyle"', self.html)
+        self.assertIn("function setEyeStyle", self.html)
+
+    def test_reference_six_moods_are_available_in_both_profiles(self):
+        for mood in ("happy", "sad", "angry", "sleepy", "surprise"):
+            with self.subTest(mood=mood):
+                self.assertIn(mood, self.html)
+        self.assertIn('standard: ["neutral", "happy", "sad", "angry", "sleepy", "surprise"', self.html)
+        self.assertIn('rugged: ["neutral", "happy", "sad", "angry", "sleepy", "surprise"', self.html)
+
+    def test_reference_lid_geometry_and_blink_are_rendered(self):
+        for field in ("lidTop", "lidBottom", "lidTilt", "eyeScale", "pupilScale", "blink"):
+            with self.subTest(field=field):
+                self.assertIn(field, self.html)
+        self.assertIn("quadraticCurveTo", self.html)
+        self.assertIn("roundRect", self.html)
+
     def test_preview_has_no_external_runtime_assets(self):
         self.assertEqual(self.parser.external_assets, [])
         self.assertNotIn("@import", self.html.lower())
