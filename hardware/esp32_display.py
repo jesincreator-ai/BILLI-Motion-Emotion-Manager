@@ -1,13 +1,9 @@
-"""Adapter for an already initialized SSD1306-compatible display driver.
-
-This module intentionally does not bundle a third-party display driver.
-Pass an initialized display object with fill/rect/fill_rect/line/show methods.
-"""
+"""Display adapter for an initialized 240x240 ST7789 RGB565 TFT."""
 from billi_motion.renderer import FaceRenderer
 
 
 class ESP32FaceDisplay:
-    def __init__(self, display, width=128, height=64):
+    def __init__(self, display, width=240, height=240):
         self.renderer = FaceRenderer(display, width, height)
 
     def draw(self, frame):
