@@ -226,7 +226,7 @@ class FaceRenderer:
                    rgb565(230, 244, 255) if mode == "standard" else rgb565(255, 80, 80))
         self._line(right_cx - rx, eye_cy - ry - 5 - int(brow_tilt * 8), right_cx + rx,
                    eye_cy - ry - 5, rgb565(230, 244, 255) if mode == "standard" else rgb565(255, 80, 80))
-        mouth = frame.get("mouth", "frown" if expression in ("sad", "crying", "sorry", "disappointment") else "closed")
+        mouth = frame.get("mouth_pose", frame.get("mouth", "frown" if expression in ("sad", "crying", "sorry", "disappointment") else "closed"))
         mouth_open = max(0.0, min(1.0, float(frame.get("mouth_open", 0.0))))
         self._draw_mouth(self.width // 2, mouth_cy, mode, mouth, glow, mouth_open)
         d.show()
