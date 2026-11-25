@@ -134,7 +134,16 @@ class FaceRenderer:
         color = rgb565(255, 58, 66) if rugged else rgb565(180, 235, 247)
         dark = rgb565(30, 4, 8) if rugged else rgb565(8, 22, 30)
         width = max(10, int(self.width * 0.115))
-        if mouth == "open":
+        if mouth == "talk":
+            level = max(0.0, min(1.0, float(mouth_open)))
+            open_h = max(2, int(self.height * (0.018 + 0.075 * level)))
+            talk_w = int(width * (0.78 + 0.34 * level))
+            self._lens(cx, cy, talk_w, open_h, color)
+            self._lens(cx, cy + 1, max(3, talk_w - 3), max(1, int(open_h * 0.72)), dark)
+            if level > 0.55:
+                self._line(cx - talk_w // 2, cy - open_h // 2,
+                           cx + talk_w // 2, cy - open_h // 2, color)
+        elif mouth == "open":
             self._lens(cx, cy, width, max(5, int(self.height * 0.07)), color)
             self._lens(cx, cy + 1, max(4, width - 4), max(3, int(self.height * 0.045)), dark)
             self._line(cx - width // 2, cy - 2, cx + width // 2, cy - 2, color)
@@ -152,6 +161,9 @@ class FaceRenderer:
             self._line(cx - width, cy, cx - (width // 3), cy - 2, color)
             self._line(cx - (width // 3), cy - 2, cx + (width // 3), cy - 2, color)
             self._line(cx + (width // 3), cy - 2, cx + width, cy, color)
+        elif mouth == "smirk":
+            self._line(cx - width, cy + 1, cx, cy + 5, color)
+            self._line(cx, cy + 5, cx + width, cy - 4, color)
         else:
             self._line(cx - width, cy, cx + width, cy, color)
 
@@ -215,7 +227,8 @@ class FaceRenderer:
         self._line(right_cx - rx, eye_cy - ry - 5 - int(brow_tilt * 8), right_cx + rx,
                    eye_cy - ry - 5, rgb565(230, 244, 255) if mode == "standard" else rgb565(255, 80, 80))
         mouth = frame.get("mouth", "frown" if expression in ("sad", "crying", "sorry", "disappointment") else "closed")
-        mouth_open = max(0.0, min(1.0, float(frame.get("mouth_open", 0.0))))\n        self._draw_mouth(self.width // 2, mouth_cy, mode, mouth, glow, mouth_open)
+        mouth_open = max(0.0, min(1.0, float(frame.get("mouth_open", 0.0))))
+        self._draw_mouth(self.width // 2, mouth_cy, mode, mouth, glow, mouth_open)
         d.show()
 
         elapsed = diff_ms(self._clock_ms(), started_at)
