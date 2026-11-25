@@ -221,5 +221,38 @@ class EmbeddedRendererTests(unittest.TestCase):
         self.assertEqual(display.calls[-1][0], "show")
 
 
+class GlossyEyeReferenceTests(unittest.TestCase):
+    def test_calm_eyes_use_pearl_white_lens_and_specular_highlights(self):
+        display = FakeDisplay(240, 240)
+        renderer = FaceRenderer(display, 240, 240)
+        renderer.render({"mode": "standard", "emotion": "neutral", "eye_open": 0.88})
+
+        colours = {call[-1] for call in display.calls if call[0] == "fill_rect"}
+        self.assertIn(rgb565(250, 253, 255), colours)
+        self.assertIn(0xFFFF, colours)
+
+    def test_rugged_eyes_use_saturated_red_lens_and_white_reflections(self):
+        display = FakeDisplay(240, 240)
+        renderer = FaceRenderer(display, 240, 240)
+        renderer.render({"mode": "rugged", "emotion": "angry", "eye_open": 0.75})
+
+        colours = {call[-1] for call in display.calls if call[0] == "fill_rect"}
+        self.assertIn(rgb565(255, 56, 66), colours)
+        self.assertIn(0xFFFF, colours)
+
+    def test_glossy_eyes_use_curved_occluding_lids_without_box_outlines(self):
+        display = FakeDisplay(240, 240)
+        renderer = FaceRenderer(display, 240, 240)
+        renderer.render({"mode": "standard", "emotion": "happy", "eye_open": 0.72})
+
+        black_lid_bands = [
+            call for call in display.calls
+            if call[0] == "fill_rect" and call[-1] == 0x0000
+        ]
+        box_outlines = [call for call in display.calls if call[0] == "rect"]
+        self.assertGreaterEqual(len(black_lid_bands), 8)
+        self.assertEqual(box_outlines, [])
+
+
 if __name__ == "__main__":
     unittest.main()
