@@ -25,11 +25,13 @@ class MouthSpeechTests(unittest.TestCase):
         manager.begin_speech(500, 0.0)
         manager.update_speech_level(520, 0.8)
         talking = manager.tick(540)
-        self.assertEqual(talking["mouth"], "open")\n        self.assertEqual(talking["mouth_pose"], "talk")
+        self.assertEqual(talking["mouth"], "open")
+        self.assertEqual(talking["mouth_pose"], "talk")
         self.assertGreater(talking["mouth_open"], 0.0)
         manager.end_speech()
         after = manager.tick(560)
         self.assertEqual(after["mouth"], "smile")
+        self.assertEqual(after["mouth_pose"], "smile")
         self.assertEqual(after["mouth_open"], 0.0)
 
     def test_low_volume_speech_closes_mouth_without_losing_emotion(self):
