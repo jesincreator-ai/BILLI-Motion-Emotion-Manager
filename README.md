@@ -8,6 +8,10 @@ The face uses a stylized **2.5D** treatment: layered eye shells, recessed socket
 
 The ESP32-WROOM-32 does not have a programmable graphics GPU or PSRAM in this configuration. M6 therefore does **not** use full 3D meshes, PBR or GPU fragment shaders on the device. It draws a low-memory 2.5D approximation directly to the display and does not allocate a 240x240 RGB565 framebuffer (115,200 bytes). Browser effects are a higher-quality preview, not evidence of embedded frame rate.
 
+### Glossy eye reference
+
+The eye treatment takes visual cues from [ESP32 Robot Eyes by Elroy Chen](https://github.com/ElroyChenWI/esp32-robot-eyes): layered glossy lens surfaces, recessed sockets, iris/pupil depth, bright catchlights and curved eyelid masks. BILLI's port is implemented for its own hardware rather than installing the reference firmware unchanged; see [the adaptation notes](docs/REFERENCE_GLOSSY_EYE_ADAPTATION.md).
+
 ## Face profiles and emotion set
 
 | Profile | Display palette | Supported expressions |

@@ -131,3 +131,28 @@ The actual device acceptance run remains a required owner-side check: flash the 
 - The final checked CI run validates Python 3.10, 3.11 and 3.12 and parses the single-file browser preview with Node.js 22.
 - The local browser interaction/visual inspection and hosted Vercel preview were not run in this environment.
 - The actual WROOM-32/ST7789 device check remains an owner-side acceptance step: flash the feature branch and measure FPS, free heap, SPI colour order and display rotation.
+
+
+### Task 6: Adapt the glossy-eye reference to BILLI's WROOM renderer
+
+**Files:**
+- Modify: `billi_motion/renderer.py`
+- Modify: `index.html`
+- Modify: `README.md`
+- Create: `docs/REFERENCE_GLOSSY_EYE_ADAPTATION.md`
+- Modify: `tests/test_cinematic_face.py`
+- Modify: `tests/test_preview.py`
+
+**Interfaces:**
+- Preserve `FaceRenderer.render(frame)` and the five-operation ST7789 display contract.
+- Keep Calm pearl-white and Rugged crimson palettes consistent between firmware and browser preview.
+- Do not add a framebuffer, PSRAM dependency, Arduino/LovyanGFX dependency or external runtime asset.
+
+- [x] Add tests for pearl lens colour, crimson lens colour, specular reflections and curved lid masks.
+- [x] Observe the new renderer tests fail on the old renderer (missing crimson lens and eyelid-mask spans).
+- [x] Add matching browser palette contract tests.
+- [x] Port two bounded catchlights and quantized curved lid occlusion using clipped RGB565 spans.
+- [x] Update offline preview colours to pearl white (Calm) and crimson red (Rugged).
+- [x] Document reference attribution and why its ESP32-S3/Arduino/LovyanGFX firmware is not installed as-is on WROOM-32 MicroPython.
+- [ ] Run the complete Python suite and offline preview checker on the final branch head.
+- [ ] Inspect the resulting PR diff and CI run; physical display calibration remains unverified.
