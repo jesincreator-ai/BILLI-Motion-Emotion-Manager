@@ -8,10 +8,11 @@ from .events import EventQueue
 class MotionEmotionManager:
     MODES = ("standard", "rugged")
     MODE_ALIASES = {"calm": "standard"}
-    STANDARD_EMOTIONS = (
-        "happy", "sad", "surprise", "disappointment", "sorry", "crying"
+    REFERENCE_EMOTIONS = ("happy", "sad", "angry", "sleepy", "surprise")
+    STANDARD_EMOTIONS = REFERENCE_EMOTIONS + (
+        "disappointment", "sorry", "crying"
     )
-    RUGGED_EMOTIONS = ("angry", "ego_fire")
+    RUGGED_EMOTIONS = REFERENCE_EMOTIONS + ("ego_fire",)
 
     def __init__(self, event_capacity=16, mode="standard"):
         self.emotion = EmotionEngine()
@@ -20,6 +21,7 @@ class MotionEmotionManager:
         self.events = EventQueue(event_capacity)
         mode = self.MODE_ALIASES.get(mode, mode)
         self.mode = mode if mode in self.MODES else "standard"
+        self.eye_style = "glossy"
 
     def _emotion_allowed(self, emotion):
         if emotion == "neutral":
@@ -39,6 +41,13 @@ class MotionEmotionManager:
                 self.emotion.set_emotion("neutral", 0.5, now_ms)
                 self.animator.set_expression("neutral", 0.5, now_ms)
             self.events.push({"kind": "mode", "value": mode, "at_ms": int(now_ms)})
+        return True
+
+    def set_eye_style(self, style):
+        """Select Flat or Glossy eye drawing; Glossy is the default."""
+        if style not in ("flat", "glossy"):
+            return False
+        self.eye_style = style
         return True
 
     def set_emotion(self, emotion, intensity=1.0, now_ms=0):
@@ -80,6 +89,7 @@ class MotionEmotionManager:
         frame["emotion"] = self.emotion.get_state()["emotion"]
         frame["mode"] = self.mode
         frame["color"] = "red" if self.mode == "rugged" else "white"
+        frame["eye_style"] = self.eye_style
         return frame
 
     def next_event(self):
