@@ -52,6 +52,19 @@ class BrowserPreviewContractTests(unittest.TestCase):
             with self.subTest(feature=feature):
                 self.assertIn(feature, self.html)
 
+    def test_speaking_state_is_available_in_both_modes(self):
+        self.assertIn('standard: ["speaking"', self.html)
+        self.assertIn('rugged: ["speaking"', self.html)
+        self.assertIn('speaking: {', self.html)
+        self.assertIn('mouth:"talk"', self.html)
+
+    def test_mouth_animates_for_speech_and_emotions(self):
+        for feature in ('function drawMouth(pose,palette,now)',
+                       'pose.mouth==="talk"', 'talkWave', 'smileMotion',
+                       'jawPulse', 'drawMouth(pose,palette,now)'):
+            with self.subTest(feature=feature):
+                self.assertIn(feature, self.html)
+
     def test_preview_has_no_external_runtime_assets(self):
         self.assertEqual(self.parser.external_assets, [])
         self.assertNotIn("@import", self.html.lower())
