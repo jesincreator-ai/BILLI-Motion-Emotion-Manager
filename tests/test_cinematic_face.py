@@ -43,7 +43,7 @@ class EmotionContractTests(unittest.TestCase):
 
     def test_mode_change_resets_incompatible_expression_to_neutral(self):
         manager = MotionEmotionManager()
-        self.assertTrue(manager.set_emotion("happy", 1.0, 1))
+        self.assertTrue(manager.set_emotion("disappointment", 1.0, 1))
         self.assertTrue(manager.set_mode("rugged", 2))
         frame = manager.tick(3)
         self.assertEqual(frame["emotion"], "neutral")
