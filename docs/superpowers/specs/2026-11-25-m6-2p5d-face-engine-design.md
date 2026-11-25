@@ -119,7 +119,7 @@ No independent subagent reviewer is available in this session, so this design wa
 
 ## 11. Implementation verification status
 
-- Implemented the shared emotion contract, eased animation state, embedded 2.5D renderer, Canvas 2D preview, English/Tamil/Sinhala labels and CI checks on `design/m6-2p5d-face-engine`.
+- Implemented the shared emotion contract, eased and intensity-scaled animation state, subtle idle gaze drift, embedded 2.5D renderer with three adaptive quality tiers, Canvas 2D preview, English/Tamil/Sinhala labels and CI checks on `design/m6-2p5d-face-engine`.
 - GitHub Actions passes the Python suite on Python 3.10, 3.11 and 3.12; the offline asset check and Node.js inline-JavaScript syntax check also pass.
 - Fake-display tests cover RGB565 bounds, clipping, allowed driver calls, no full-screen framebuffer, and a bounded display-transaction count.
 - Static responsive-preview checks and JavaScript parsing are complete. A real browser viewport/interaction session has not been independently exercised in this environment.
