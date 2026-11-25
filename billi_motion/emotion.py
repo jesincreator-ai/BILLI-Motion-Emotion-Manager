@@ -5,6 +5,7 @@ EMOTIONS = (
     "happy",
     "sad",
     "surprise",
+    "sleepy",
     "disappointment",
     "sorry",
     "crying",
