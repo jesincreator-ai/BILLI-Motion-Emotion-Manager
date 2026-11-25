@@ -162,18 +162,20 @@ function resizeCanvas() {
   pixelRatio = Math.min(2, window.devicePixelRatio || 1);
   canvas.width = 720; canvas.height = 720;
 }
-function currentPose(now) {
+function currentPose(now, applyIntensity = true) {
   const progress = clamp((now-state.started)/state.transitionMs);
   const t = ease(progress);
   const pose = {};
   for (const key of ["open","tilt","brow","glow","tear","fire"]) pose[key]=mix(state.from[key],state.target[key],t);
-  const intensity = clamp(state.intensity, .1, 1);
-  pose.open = mix(POSES.neutral.open, pose.open, intensity);
-  pose.tilt *= intensity;
-  pose.brow *= intensity;
-  pose.glow = mix(POSES.neutral.glow, pose.glow, intensity);
-  pose.tear *= intensity;
-  pose.fire *= intensity;
+  if (applyIntensity) {
+    const intensity = clamp(state.intensity, .1, 1);
+    pose.open = mix(POSES.neutral.open, pose.open, intensity);
+    pose.tilt *= intensity;
+    pose.brow *= intensity;
+    pose.glow = mix(POSES.neutral.glow, pose.glow, intensity);
+    pose.tear *= intensity;
+    pose.fire *= intensity;
+  }
   pose.mouth = progress < .5 ? state.from.mouth : state.target.mouth;
   pose.transition = progress;
   return pose;
@@ -183,7 +185,7 @@ function allowed(emotion) {
 }
 function setEmotion(emotion, now=performance.now()) {
   if (!allowed(emotion) || !POSES[emotion]) return false;
-  const current = currentPose(now);
+  const current = currentPose(now, false);
   state.from = {...current};
   state.target = {...POSES[emotion]};
   state.emotion = emotion;
