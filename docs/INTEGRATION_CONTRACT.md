@@ -28,7 +28,7 @@ The legacy spelling `surprised` is canonicalized to `surprise`. Invalid names an
 - Use `ESP32FaceDisplay(display, 240, 240)` for the checked-in ST7789 adapter.
 - The display driver's known required methods are `fill`, `rect`, `fill_rect`, `line` and `show`; verify the concrete driver and its RGB565 colour order on the selected module.
 - The ESP32 renderer is a no-full-framebuffer 2.5D raster approximation; the Canvas 2D desktop/mobile preview intentionally provides smoother gradients and more elaborate compositing.
-- Host fake-display tests cover supported operations, clipping, 16-bit colors and bounded transaction count. Physical display timing, free-heap impact and the final visual appearance still require measurements on the actual WROOM-32/ST7789 hardware.
+- Host fake-display tests cover supported operations, clipping, 16-bit colors, bounded transaction count, and adaptive quality diagnostics. The renderer exposes `render_time_ms` and `quality_tier` for device-side profiling; detail is reduced when a draw exceeds about 67 ms and restored gradually when comfortably under 30 ms. Physical display timing, free-heap impact and the final visual appearance still require measurements on the actual WROOM-32/ST7789 hardware.
 
 ## Ownership boundaries
 
