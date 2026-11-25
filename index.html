@@ -313,19 +313,29 @@ function drawFlame(x,y,amount,now,palette) {
   }
   ctx.restore();
 }
-function drawMouth(pose,palette) {
+function drawMouth(pose,palette,now) {
   const y=535;
+  const talkWave=clamp(.5+.5*Math.sin(now*.018)+.22*Math.sin(now*.037),0,1);
+  const smileMotion=.5+.5*Math.sin(now*.0032);
   ctx.save();ctx.translate(360,y);ctx.shadowColor=palette.glow;ctx.shadowBlur=16+pose.glow*18;
   ctx.strokeStyle=palette.mouth;ctx.fillStyle=palette.socket;ctx.lineWidth=9;ctx.lineCap="round";
-  if(pose.mouth==="open"){
-    ctx.beginPath();ctx.ellipse(0,0,44,pose.open>0.9?42:30,0,0,TAU);ctx.fill();ctx.stroke();
+  if(pose.mouth==="talk"){
+    const openH=9+48*talkWave; const width=48+26*talkWave;
+    ctx.beginPath();ctx.ellipse(0,4,width,openH,0,0,TAU);ctx.fill();ctx.stroke();
+    ctx.fillStyle=palette.rim;ctx.globalAlpha=.78;ctx.fillRect(-width*.62,-openH*.45,width*1.24,Math.max(3,openH*.12));
+    ctx.globalAlpha=.65;ctx.fillStyle=palette.mouth;ctx.beginPath();ctx.ellipse(0,openH*.45,width*.42,openH*.18,0,0,TAU);ctx.fill();
+  }else if(pose.mouth==="open"){
+    const openH=30+Math.sin(now*.004)*5;
+    ctx.beginPath();ctx.ellipse(0,0,44,openH,0,0,TAU);ctx.fill();ctx.stroke();
     ctx.fillStyle=palette.rim;ctx.globalAlpha=.7;ctx.fillRect(-25,-19,50,5);
   }else if(pose.mouth==="smile"){
-    ctx.beginPath();ctx.moveTo(-75,-8);ctx.bezierCurveTo(-38,48,38,48,75,-8);ctx.stroke();
+    const smileY=8+smileMotion*5;
+    ctx.beginPath();ctx.moveTo(-75,-smileY);ctx.bezierCurveTo(-38,40+smileMotion*7,38,40+smileMotion*7,75,-smileY);ctx.stroke();
   }else if(pose.mouth==="frown"){
     ctx.beginPath();ctx.moveTo(-70,17);ctx.bezierCurveTo(-35,-28,35,-28,70,17);ctx.stroke();
   }else if(pose.mouth==="tight"){
-    ctx.beginPath();ctx.moveTo(-74,0);ctx.quadraticCurveTo(0,-12,74,0);ctx.stroke();
+    const jawPulse=Math.sin(now*.005)*2.5;
+    ctx.beginPath();ctx.moveTo(-74,0);ctx.quadraticCurveTo(0,-12+jawPulse,74,0);ctx.stroke();
   }else{
     ctx.beginPath();ctx.moveTo(-54,0);ctx.lineTo(54,0);ctx.stroke();
   }
@@ -342,7 +352,7 @@ function draw(now) {
   if(state.autoIdle)pose.glow=clamp(pose.glow*(.94+.06*(.5+.5*Math.sin(now*.0014))));
   drawEye(220,310,0,pose,palette,now,blink);
   drawEye(500,310,1,pose,palette,now,blink);
-  drawMouth(pose,palette);
+  drawMouth(pose,palette,now);
   ctx.save();ctx.strokeStyle=palette.glow;ctx.globalAlpha=.12+pose.glow*.12;ctx.lineWidth=2;
   ctx.beginPath();ctx.arc(360,360,292+Math.sin(now*.001)*4,0,TAU);ctx.stroke();
   ctx.globalAlpha=.05;ctx.beginPath();ctx.arc(360,360,310,0,TAU);ctx.stroke();ctx.restore();
